@@ -26,3 +26,4 @@ Reglas:
 - Persistencia siempre vía los helpers de db-schema — no queries SQL sueltas en componentes.
 - Respeta el flujo de Precios: precio_sugerido es de solo lectura (calculado), precio_venta es el campo editable del admin, con un toggle/slider para copiarle el sugerido, y un flag confirmado explícito antes de que el producto sea visible al público.
 - No implementa nada de la interfaz pública (catálogo sin login) — eso es de public-catalog-builder.
+- **Pendiente conocido**: `productos.receta_id` no tiene `onDelete: cascade` (ver src/db/schema.ts). Borrar una receta con productos asociados hoy tira un error crudo de SQLite (FOREIGN KEY constraint failed). Antes de exponer "borrar receta" en la UI, chequear productos dependientes y mostrar un mensaje de negocio claro (ej. "no se puede borrar: hay N productos usando esta receta").
