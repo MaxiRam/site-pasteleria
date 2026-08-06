@@ -2,11 +2,8 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { DB_PATH } from "./path";
 import * as schema from "./schema";
-
-// Ruta de la DB: coincide con drizzle.config.ts. Puede overridearse con
-// DATABASE_URL para tests u otros entornos.
-const DB_PATH = process.env.DATABASE_URL ?? "./data/dev.db";
 
 // better-sqlite3 no crea el directorio padre si falta.
 mkdirSync(dirname(DB_PATH), { recursive: true });
