@@ -81,6 +81,11 @@ export const recetaInsumos = sqliteTable(
 
 export const productos = sqliteTable("productos", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  // Sin onDelete cascade a propósito: borrar una receta con productos
+  // asociados debe fallar en vez de arrastrar productos silenciosamente.
+  // PENDIENTE (admin-ui-builder): hoy ese fallo es un error crudo de SQLite
+  // (FOREIGN KEY constraint failed); antes de borrar una receta desde la UI,
+  // chequear productos dependientes y mostrar un mensaje de negocio claro.
   recetaId: integer("receta_id")
     .notNull()
     .references(() => recetas.id),
