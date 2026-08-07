@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { admins } from "@/db/schema";
-import { verifyPassword } from "./password";
+import { DUMMY_PASSWORD_HASH, verifyPassword } from "./password";
 import {
   createSessionToken,
   SESSION_COOKIE_NAME,
@@ -43,12 +43,18 @@ export async function login(
   }
 
   const admin = db.select().from(admins).where(eq(admins.email, email)).get();
-  if (!admin) {
-    return { error: GENERIC_LOGIN_ERROR };
-  }
 
-  const passwordOk = await verifyPassword(password, admin.passwordHash);
-  if (!passwordOk) {
+  // Si el email no existe, igual corremos verifyPassword (contra un hash
+  // dummy) para pagar el mismo costo de scrypt que la rama de password
+  // incorrecta. Sin esto, un email inexistente responde en <1ms y uno
+  // existente tarda el costo completo de scrypt: un timing side-channel
+  // que filtra qué emails están registrados aunque el mensaje de error
+  // sea idéntico (medido: ~35ms vs ~0.3ms, ~100x).
+  const passwordOk = await verifyPassword(
+    password,
+    admin?.passwordHash ?? DUMMY_PASSWORD_HASH,
+  );
+  if (!admin || !passwordOk) {
     return { error: GENERIC_LOGIN_ERROR };
   }
 

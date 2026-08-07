@@ -12,6 +12,14 @@ import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 const SALT_BYTES = 16;
 const KEY_LENGTH = 64;
 
+/**
+ * Hash `salt:hash` de formato válido pero sin password real detrás.
+ * Usado por el caller (login) para pagar el mismo costo de scrypt cuando
+ * el email no existe, y así no filtrar por timing qué emails están
+ * registrados (ver src/lib/auth/actions.ts).
+ */
+export const DUMMY_PASSWORD_HASH = `${"00".repeat(SALT_BYTES)}:${"00".repeat(KEY_LENGTH)}`;
+
 function deriveKey(password: string, salt: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     scrypt(password, salt, KEY_LENGTH, (err, derivedKey) => {

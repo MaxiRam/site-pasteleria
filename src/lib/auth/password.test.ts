@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hashPassword, verifyPassword } from "./password";
+import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from "./password";
 
 describe("hashPassword / verifyPassword", () => {
   it("roundtrip: la password correcta verifica contra su propio hash", async () => {
@@ -22,5 +22,11 @@ describe("hashPassword / verifyPassword", () => {
     await expect(verifyPassword("cualquiera", "hash-sin-separador")).resolves.toBe(
       false,
     );
+  });
+
+  it("DUMMY_PASSWORD_HASH nunca verifica true (no es un hash real)", async () => {
+    await expect(
+      verifyPassword("cualquier-password", DUMMY_PASSWORD_HASH),
+    ).resolves.toBe(false);
   });
 });
