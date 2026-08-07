@@ -36,6 +36,8 @@ Cada insumo registra:
 
 Ejemplo: se compran 1kg de harina a $2000 → precio unitario base = $2/g.
 
+**Normalización de nombre**: el admin puede tipear el mismo insumo con distinta capitalización ("Harina", "harina", "HARINA"). Antes de persistir, `nombre` se sanitiza y normaliza a lowercase, para evitar duplicados que en realidad son el mismo insumo. La normalización es responsabilidad de la capa de escritura (helpers de insert/update en db-schema), no de la UI ni de calc-engine.
+
 ### 2. Recetas
 
 Cada receta define:

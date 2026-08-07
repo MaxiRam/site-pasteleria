@@ -26,3 +26,4 @@ Reglas:
 - Respeta los nombres y campos ya definidos en proyecto.md salvo que el usuario pida explícitamente cambiarlos.
 - Expone helpers de acceso a datos (queries) simples, pero NO lógica de negocio (escalado/pricing es de calc-engine) ni componentes UI ni rutas API (de admin-ui-builder / public-catalog-builder).
 - Al agregar un campo con reglas de negocio (ej. `confirmado` en Precio, que gatea visibilidad pública), documentar la regla en un comentario corto en la migración.
+- **Pendiente**: todo helper de insert/update de `insumos.nombre` debe normalizar el valor a lowercase (sanitizado) antes de persistir — el admin puede tipear el mismo insumo con distinta capitalización ("Harina" vs "harina") y no deben quedar como filas duplicadas. Ver proyecto.md, sección Insumos.
