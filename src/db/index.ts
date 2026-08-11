@@ -18,7 +18,7 @@ export const db = drizzle(sqlite, { schema });
 // Cualquier lógica de negocio (escalado, costos, precios) NO va aquí.
 
 export function getInsumos() {
-  return db.select().from(schema.insumos).all();
+  return db.select().from(schema.insumos).orderBy(schema.insumos.nombre).all();
 }
 
 export function getRecetas() {
