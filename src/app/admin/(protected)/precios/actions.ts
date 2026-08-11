@@ -31,7 +31,7 @@ function traducirError(e: unknown, fallback: string): string {
 
 /**
  * `margenPct` viaja en el form como porcentaje humano (ej. "60" = 60%, ver
- * editar-precio-form.tsx) — se convierte a fracción [0,1) recién acá, antes
+ * precio-row.tsx / editar-precio-form.tsx) — se convierte a fracción [0,1) recién acá, antes
  * de llegar a la capa de datos (que espera fracción, mismo formato que
  * `MARGEN_POR_DIAMETRO`). El rango válido no se valida en este parser: si
  * el admin ingresa un valor fuera de [0,1) una vez convertido, se deja

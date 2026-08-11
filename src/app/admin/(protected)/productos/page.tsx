@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProductos } from "@/db/productos";
+import { EyeIcon, PencilIcon } from "@/components/icons";
 import { DeleteProductoButton } from "./delete-producto-button";
 import { GenerarPreciosButton } from "./generar-precios-button";
 
@@ -64,15 +65,19 @@ export default function ProductosPage() {
                     <div className="flex items-center gap-3">
                       <Link
                         href={`/admin/productos/${producto.id}/editar`}
-                        className="text-sm text-zinc-700 hover:underline"
+                        aria-label="Editar"
+                        title="Editar"
+                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        Editar
+                        <PencilIcon className="h-4 w-4" />
                       </Link>
                       <Link
                         href="/admin/precios"
-                        className="text-sm text-zinc-700 hover:underline"
+                        aria-label="Ver precios"
+                        title="Ver precios"
+                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        Ver precios
+                        <EyeIcon className="h-4 w-4" />
                       </Link>
                       <GenerarPreciosButton id={producto.id} />
                       <DeleteProductoButton id={producto.id} nombre={producto.nombrePublico} />

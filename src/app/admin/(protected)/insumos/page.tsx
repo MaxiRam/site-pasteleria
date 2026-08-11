@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getInsumos } from "@/db";
 import { getRecetasQueUsanInsumo } from "@/db/insumos";
+import { PencilIcon } from "@/components/icons";
 import { formatARS } from "@/lib/format";
 import { DeleteInsumoButton } from "./delete-insumo-button";
 
@@ -62,9 +63,11 @@ export default function InsumosPage() {
                     <div className="flex items-center gap-3">
                       <Link
                         href={`/admin/insumos/${insumo.id}/editar`}
-                        className="text-sm text-zinc-700 hover:underline"
+                        aria-label="Editar"
+                        title="Editar"
+                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        Editar
+                        <PencilIcon className="h-4 w-4" />
                       </Link>
                       <DeleteInsumoButton
                         id={insumo.id}
