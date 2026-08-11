@@ -6,8 +6,7 @@ import type { ReactNode } from "react";
  * de este route group `(protected)` a propósito: el login tiene su propio
  * flujo standalone y no debe mostrar nav de secciones que requieren sesión).
  *
- * Nav con Insumos, Recetas, Productos y Dashboard únicamente por ahora —
- * Precios todavía no existe (se agrega en un próximo PR).
+ * Nav con Insumos, Recetas, Productos, Precios y Dashboard.
  */
 export default function ProtectedAdminLayout({
   children,
@@ -38,6 +37,12 @@ export default function ProtectedAdminLayout({
             className="text-sm text-zinc-600 hover:text-zinc-900"
           >
             Productos
+          </Link>
+          <Link
+            href="/admin/precios"
+            className="text-sm text-zinc-600 hover:text-zinc-900"
+          >
+            Precios
           </Link>
         </nav>
       </header>
