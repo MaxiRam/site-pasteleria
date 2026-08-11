@@ -42,7 +42,7 @@ export function InsumoForm({
           type="text"
           required
           defaultValue={initialValues?.nombre}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
@@ -61,7 +61,7 @@ export function InsumoForm({
           min="0"
           required
           defaultValue={initialValues?.cantidadComprada}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
@@ -74,7 +74,7 @@ export function InsumoForm({
           name="unidad"
           required
           defaultValue={initialValues?.unidad ?? UNIDADES[0]}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         >
           {UNIDADES.map((unidad) => (
             <option key={unidad} value={unidad}>
@@ -99,7 +99,7 @@ export function InsumoForm({
           min="0"
           required
           defaultValue={initialValues?.precioCompra}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 

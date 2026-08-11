@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { actualizarProducto, crearProducto, eliminarProducto, type ProductoInput } from "@/db/productos";
+import { generarPreciosParaProducto } from "@/db/precios";
 
 export type ProductoFormState = { error: string } | undefined;
 export type EliminarProductoState = { error: string } | undefined;
+export type GenerarPreciosState = { error: string } | undefined;
 
 /**
  * Valida y normaliza el FormData del form de producto (nuevo/editar). Server
@@ -46,15 +48,46 @@ export async function crearProductoAction(
     return parsed;
   }
 
+  let producto: ReturnType<typeof crearProducto>;
   try {
-    crearProducto(parsed);
+    producto = crearProducto(parsed);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo crear el producto." };
   }
 
+  // Genera automáticamente los precios de los 5 diámetros para este
+  // producto (margen default por diámetro, sin confirmar todavía) — el
+  // admin ya no tiene que crear "Nuevo precio" a mano una vez por diámetro,
+  // ver src/db/precios.ts > generarPreciosParaProducto.
+  generarPreciosParaProducto(producto.id);
+
   revalidatePath("/admin/productos");
+  revalidatePath("/admin/precios");
   revalidatePath("/admin");
   redirect("/admin/productos");
+}
+
+/**
+ * Backfill para productos creados antes de que crearProductoAction generara
+ * los precios automáticamente: genera los que le falten a un producto ya
+ * existente (no pisa los que ya tiene, ver generarPreciosParaProducto).
+ */
+export async function generarPreciosAction(
+  productoId: number,
+  _prevState: GenerarPreciosState,
+  _formData: FormData,
+): Promise<GenerarPreciosState> {
+  try {
+    generarPreciosParaProducto(productoId);
+  } catch (e) {
+    return {
+      error: e instanceof Error ? e.message : "No se pudieron generar los precios.",
+    };
+  }
+
+  revalidatePath("/admin/precios");
+  revalidatePath("/admin");
+  return undefined;
 }
 
 export async function actualizarProductoAction(

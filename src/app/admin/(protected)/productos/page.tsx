@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProductos } from "@/db/productos";
 import { DeleteProductoButton } from "./delete-producto-button";
+import { GenerarPreciosButton } from "./generar-precios-button";
 
 // Lista debe reflejar altas/bajas/ediciones inmediatamente: no cachear la
 // prerenderización estática de esta página (mismo criterio que
@@ -67,6 +68,13 @@ export default function ProductosPage() {
                       >
                         Editar
                       </Link>
+                      <Link
+                        href="/admin/precios"
+                        className="text-sm text-zinc-700 hover:underline"
+                      >
+                        Ver precios
+                      </Link>
+                      <GenerarPreciosButton id={producto.id} />
                       <DeleteProductoButton id={producto.id} nombre={producto.nombrePublico} />
                     </div>
                   </td>
