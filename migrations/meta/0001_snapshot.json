@@ -1,0 +1,395 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "3a199ef8-270d-4f1c-880b-b12ada48f9e1",
+  "prevId": "112bf9c8-d066-4292-a2c2-031cb2eee6b2",
+  "tables": {
+    "admins": {
+      "name": "admins",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "admins_email_unique": {
+          "name": "admins_email_unique",
+          "columns": [
+            "email"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "insumos": {
+      "name": "insumos",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cantidad_comprada": {
+          "name": "cantidad_comprada",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "unidad": {
+          "name": "unidad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "precio_compra": {
+          "name": "precio_compra",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "precio_unitario_base": {
+          "name": "precio_unitario_base",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "insumos_unidad_check": {
+          "name": "insumos_unidad_check",
+          "value": "\"insumos\".\"unidad\" in ('ml','g','kg','unidad')"
+        }
+      }
+    },
+    "precios": {
+      "name": "precios",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "producto_id": {
+          "name": "producto_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "diametro": {
+          "name": "diametro",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "costo_calculado": {
+          "name": "costo_calculado",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "margen_pct": {
+          "name": "margen_pct",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "precio_sugerido": {
+          "name": "precio_sugerido",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "precio_venta": {
+          "name": "precio_venta",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "confirmado": {
+          "name": "confirmado",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {
+        "precios_producto_diametro_unique": {
+          "name": "precios_producto_diametro_unique",
+          "columns": [
+            "producto_id",
+            "diametro"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "precios_producto_id_productos_id_fk": {
+          "name": "precios_producto_id_productos_id_fk",
+          "tableFrom": "precios",
+          "tableTo": "productos",
+          "columnsFrom": [
+            "producto_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "precios_diametro_check": {
+          "name": "precios_diametro_check",
+          "value": "\"precios\".\"diametro\" in (12,18,20,22,25)"
+        }
+      }
+    },
+    "productos": {
+      "name": "productos",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "receta_id": {
+          "name": "receta_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre_publico": {
+          "name": "nombre_publico",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "imagen": {
+          "name": "imagen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "publicado": {
+          "name": "publicado",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "productos_receta_id_recetas_id_fk": {
+          "name": "productos_receta_id_recetas_id_fk",
+          "tableFrom": "productos",
+          "tableTo": "recetas",
+          "columnsFrom": [
+            "receta_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "receta_insumos": {
+      "name": "receta_insumos",
+      "columns": {
+        "receta_id": {
+          "name": "receta_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "insumo_id": {
+          "name": "insumo_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cantidad": {
+          "name": "cantidad",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "es_huevo": {
+          "name": "es_huevo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {
+        "receta_insumos_una_receta_un_huevo": {
+          "name": "receta_insumos_una_receta_un_huevo",
+          "columns": [
+            "receta_id"
+          ],
+          "isUnique": true,
+          "where": "\"receta_insumos\".\"es_huevo\" = 1"
+        }
+      },
+      "foreignKeys": {
+        "receta_insumos_receta_id_recetas_id_fk": {
+          "name": "receta_insumos_receta_id_recetas_id_fk",
+          "tableFrom": "receta_insumos",
+          "tableTo": "recetas",
+          "columnsFrom": [
+            "receta_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "receta_insumos_insumo_id_insumos_id_fk": {
+          "name": "receta_insumos_insumo_id_insumos_id_fk",
+          "tableFrom": "receta_insumos",
+          "tableTo": "insumos",
+          "columnsFrom": [
+            "insumo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "receta_insumos_receta_id_insumo_id_pk": {
+          "columns": [
+            "receta_id",
+            "insumo_id"
+          ],
+          "name": "receta_insumos_receta_id_insumo_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "recetas": {
+      "name": "recetas",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "diametro_base": {
+          "name": "diametro_base",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "recetas_diametro_base_check": {
+          "name": "recetas_diametro_base_check",
+          "value": "\"recetas\".\"diametro_base\" in (12,18,20,22,25)"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

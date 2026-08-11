@@ -11,4 +11,6 @@ export { calcularFactorEscalado, calcularCantidadesEscaladas } from "./escalado"
 export type { InsumoCosto } from "./costo";
 export { calcularCostoReceta } from "./costo";
 
-export { MARGEN_POR_DIAMETRO, calcularPrecioSugerido } from "./pricing";
+export { MARGEN_POR_DIAMETRO, calcularMargenReal, calcularPrecioSugerido } from "./pricing";
+
+export { calcularPrecioUnitarioBase } from "./insumo";

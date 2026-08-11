@@ -16,11 +16,10 @@ export const db = drizzle(sqlite, { schema });
 
 // Helpers de acceso a datos mínimos, solo para validar el schema.
 // Cualquier lógica de negocio (escalado, costos, precios) NO va aquí.
+//
+// getRecetas() vive en src/db/recetas.ts (junto con el resto del CRUD de
+// recetas), no acá — ver ese archivo para el helper real.
 
 export function getInsumos() {
-  return db.select().from(schema.insumos).all();
-}
-
-export function getRecetas() {
-  return db.select().from(schema.recetas).all();
+  return db.select().from(schema.insumos).orderBy(schema.insumos.nombre).all();
 }
