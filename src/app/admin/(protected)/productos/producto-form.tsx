@@ -44,7 +44,7 @@ export function ProductoForm({
           type="text"
           required
           defaultValue={initialValues?.nombrePublico}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
@@ -57,7 +57,7 @@ export function ProductoForm({
           name="descripcion"
           rows={4}
           defaultValue={initialValues?.descripcion ?? ""}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
@@ -75,7 +75,7 @@ export function ProductoForm({
             name="recetaId"
             required
             defaultValue={initialValues?.recetaId ?? recetasDisponibles[0]?.id}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
+            className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
           >
             {recetasDisponibles.map((receta) => (
               <option key={receta.id} value={receta.id}>

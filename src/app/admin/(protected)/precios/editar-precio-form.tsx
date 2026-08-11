@@ -91,7 +91,7 @@ export function EditarPrecioForm({
           max="99.99"
           required
           defaultValue={margenPctInicial * 100}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
@@ -108,7 +108,7 @@ export function EditarPrecioForm({
             min="0"
             value={precioVenta}
             onChange={(e) => setPrecioVenta(e.target.value)}
-            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
           />
           <button
             type="button"

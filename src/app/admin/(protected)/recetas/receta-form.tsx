@@ -127,7 +127,7 @@ export function RecetaForm({
           type="text"
           required
           defaultValue={initialValues?.nombre}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
@@ -140,7 +140,7 @@ export function RecetaForm({
           name="diametroBase"
           required
           defaultValue={initialValues?.diametroBase ?? DIAMETROS[0]}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         >
           {DIAMETROS.map((diametro) => (
             <option key={diametro} value={diametro}>
@@ -177,7 +177,7 @@ export function RecetaForm({
             <select
               value={fila.insumoId}
               onChange={(e) => actualizarFila(fila.id, { insumoId: Number(e.target.value) })}
-              className="rounded border border-zinc-300 px-3 py-2 text-sm"
+              className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
             >
               {insumosDisponibles.map((insumo) => (
                 <option key={insumo.id} value={insumo.id}>
@@ -193,7 +193,7 @@ export function RecetaForm({
               placeholder="Cantidad"
               value={fila.cantidad}
               onChange={(e) => actualizarFila(fila.id, { cantidad: e.target.value })}
-              className="w-28 rounded border border-zinc-300 px-3 py-2 text-sm"
+              className="w-28 rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
             />
 
             <label className="flex items-center gap-1 text-sm text-zinc-600">
