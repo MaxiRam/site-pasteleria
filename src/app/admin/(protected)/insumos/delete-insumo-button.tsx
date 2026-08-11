@@ -1,5 +1,6 @@
 "use client";
 
+import { TrashIcon } from "@/components/icons";
 import { eliminarInsumoAction } from "./actions";
 
 /**
@@ -41,8 +42,13 @@ export function DeleteInsumoButton({
         }
       }}
     >
-      <button type="submit" className="text-sm text-red-600 hover:underline">
-        Eliminar
+      <button
+        type="submit"
+        aria-label="Eliminar"
+        title="Eliminar"
+        className="rounded border border-zinc-300 p-1.5 text-red-600 hover:bg-red-50"
+      >
+        <TrashIcon className="h-4 w-4" />
       </button>
     </form>
   );

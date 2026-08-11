@@ -5,6 +5,7 @@ import Link from "next/link";
 import { calcularMargenReal } from "@/lib/calc";
 import { formatARS } from "@/lib/format";
 import type { PrecioConProducto } from "@/db/precios";
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, SaveIcon } from "@/components/icons";
 import { actualizarPrecioAction, type PrecioFormState } from "./actions";
 import { DeletePrecioButton } from "./delete-precio-button";
 
@@ -54,14 +55,24 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
       <td className="px-4 py-2 text-zinc-700">{formatARS(precio.costoCalculado)}</td>
       <td className="px-4 py-2">
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => ajustarMargen(-MARGEN_STEP)}
-            className="rounded border border-zinc-300 px-1.5 text-xs text-zinc-700 hover:bg-zinc-100"
-            aria-label="Disminuir margen 1%"
-          >
-            −
-          </button>
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => ajustarMargen(MARGEN_STEP)}
+              className="flex items-center justify-center rounded-t border border-b-0 border-zinc-300 px-0.5 text-zinc-700 hover:bg-zinc-100"
+              aria-label="Aumentar margen 1%"
+            >
+              <ChevronUpIcon className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => ajustarMargen(-MARGEN_STEP)}
+              className="flex items-center justify-center rounded-b border border-zinc-300 px-0.5 text-zinc-700 hover:bg-zinc-100"
+              aria-label="Disminuir margen 1%"
+            >
+              <ChevronDownIcon className="h-3 w-3" />
+            </button>
+          </div>
           <input
             form={formId}
             type="number"
@@ -74,14 +85,6 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
             onChange={(e) => setMargenPct(e.target.value)}
             className="w-16 rounded border border-zinc-300 px-1 py-1 text-center text-sm text-zinc-900"
           />
-          <button
-            type="button"
-            onClick={() => ajustarMargen(MARGEN_STEP)}
-            className="rounded border border-zinc-300 px-1.5 text-xs text-zinc-700 hover:bg-zinc-100"
-            aria-label="Aumentar margen 1%"
-          >
-            +
-          </button>
           <span className="text-xs text-zinc-500">%</span>
         </div>
       </td>
@@ -123,15 +126,19 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
             type="submit"
             form={formId}
             disabled={pending}
-            className="rounded border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
+            aria-label="Guardar"
+            title="Guardar"
+            className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
           >
-            {pending ? "..." : "Guardar"}
+            <SaveIcon className="h-4 w-4" />
           </button>
           <Link
             href={`/admin/precios/${precio.id}/editar`}
-            className="text-sm text-zinc-700 hover:underline"
+            aria-label="Editar"
+            title="Editar"
+            className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
           >
-            Editar
+            <PencilIcon className="h-4 w-4" />
           </Link>
           <DeletePrecioButton
             id={precio.id}

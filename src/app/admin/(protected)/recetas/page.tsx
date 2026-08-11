@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getRecetas } from "@/db/recetas";
+import { PencilIcon } from "@/components/icons";
 import { DeleteRecetaButton } from "./delete-receta-button";
 
 // Lista debe reflejar altas/bajas/ediciones inmediatamente: no cachear la
@@ -50,9 +51,11 @@ export default function RecetasPage() {
                       </Link>
                       <Link
                         href={`/admin/recetas/${receta.id}/editar`}
-                        className="text-sm text-zinc-700 hover:underline"
+                        aria-label="Editar"
+                        title="Editar"
+                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        Editar
+                        <PencilIcon className="h-4 w-4" />
                       </Link>
                       <DeleteRecetaButton id={receta.id} nombre={receta.nombre} />
                     </div>

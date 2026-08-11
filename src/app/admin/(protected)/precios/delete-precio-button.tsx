@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { TrashIcon } from "@/components/icons";
 import { eliminarPrecioAction, type EliminarPrecioState } from "./actions";
 
 /**
@@ -44,9 +45,11 @@ export function DeletePrecioButton({
       <button
         type="submit"
         disabled={pending}
-        className="text-sm text-red-600 hover:underline disabled:opacity-50"
+        aria-label="Eliminar"
+        title="Eliminar"
+        className="rounded border border-zinc-300 p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
-        Eliminar
+        <TrashIcon className="h-4 w-4" />
       </button>
       {state?.error ? <span className="text-xs text-red-600">{state.error}</span> : null}
     </form>
