@@ -8,7 +8,7 @@ import {
   eliminarInsumo,
   type InsumoInput,
 } from "@/db/insumos";
-import { UNIDADES, type Unidad } from "@/db/schema";
+import { TIPOS_INSUMO, UNIDADES, type TipoInsumo, type Unidad } from "@/db/schema";
 
 export type InsumoFormState = { error: string } | undefined;
 
@@ -21,6 +21,7 @@ export type InsumoFormState = { error: string } | undefined;
 function parseInsumoInput(formData: FormData): InsumoInput | { error: string } {
   const nombre = formData.get("nombre");
   const unidad = formData.get("unidad");
+  const tipo = formData.get("tipo");
   const cantidadComprada = formData.get("cantidadComprada");
   const precioCompra = formData.get("precioCompra");
 
@@ -30,6 +31,10 @@ function parseInsumoInput(formData: FormData): InsumoInput | { error: string } {
 
   if (typeof unidad !== "string" || !UNIDADES.includes(unidad as Unidad)) {
     return { error: "Unidad inválida." };
+  }
+
+  if (typeof tipo !== "string" || !TIPOS_INSUMO.includes(tipo as TipoInsumo)) {
+    return { error: "Tipo de insumo inválido." };
   }
 
   const cantidadNum = typeof cantidadComprada === "string" ? Number(cantidadComprada) : NaN;
@@ -45,6 +50,7 @@ function parseInsumoInput(formData: FormData): InsumoInput | { error: string } {
   return {
     nombre,
     unidad: unidad as Unidad,
+    tipo: tipo as TipoInsumo,
     cantidadComprada: cantidadNum,
     precioCompra: precioNum,
   };
@@ -62,7 +68,10 @@ export async function crearInsumoAction(
   crearInsumo(parsed);
   revalidatePath("/admin/insumos");
   revalidatePath("/admin");
-  redirect("/admin/insumos");
+  // Redirige a la pestaña del tipo recién creado — si no, un insumo de
+  // packaging desaparece de la vista (la pestaña default es "ingrediente")
+  // y parece que la creación falló en silencio.
+  redirect(`/admin/insumos?tipo=${parsed.tipo}`);
 }
 
 export async function actualizarInsumoAction(
@@ -78,7 +87,7 @@ export async function actualizarInsumoAction(
   actualizarInsumo(id, parsed);
   revalidatePath("/admin/insumos");
   revalidatePath("/admin");
-  redirect("/admin/insumos");
+  redirect(`/admin/insumos?tipo=${parsed.tipo}`);
 }
 
 export async function eliminarInsumoAction(id: number): Promise<void> {

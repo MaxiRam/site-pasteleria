@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./index";
+import { setPackagingDeProductoTx } from "./producto-insumos";
 import type { Receta } from "./recetas";
 import { productos, recetas } from "./schema";
 
@@ -26,6 +27,10 @@ export interface ProductoInput {
   descripcion: string | null;
   recetaId: number;
   publicado: boolean;
+  // Packaging asignado al producto (tabla producto_insumos, ver
+  // src/db/producto-insumos.ts). A diferencia de los insumos de una receta,
+  // puede ser una lista vacía: no todo producto necesita packaging.
+  packaging: { insumoId: number; cantidad: number }[];
 }
 
 /**
@@ -68,40 +73,57 @@ function getProductoConRecetaById(id: number): ProductoConReceta | undefined {
   return { ...fila.producto, receta: fila.receta };
 }
 
+/**
+ * Insert del producto y su packaging en una sola transacción: si el
+ * packaging es inválido (insumo inexistente o no-packaging, ver
+ * setPackagingDeProductoTx), todo se revierte — no queda un producto a
+ * medio crear sin su packaging, que además duplicaría al reintentar.
+ */
 export function crearProducto(input: ProductoInput): ProductoConReceta {
-  const producto = db
-    .insert(productos)
-    .values({
-      recetaId: input.recetaId,
-      nombrePublico: normalizarNombrePublico(input.nombrePublico),
-      descripcion: normalizarDescripcion(input.descripcion),
-      publicado: input.publicado,
-    })
-    .returning()
-    .get();
+  const productoId = db.transaction((tx) => {
+    const producto = tx
+      .insert(productos)
+      .values({
+        recetaId: input.recetaId,
+        nombrePublico: normalizarNombrePublico(input.nombrePublico),
+        descripcion: normalizarDescripcion(input.descripcion),
+        publicado: input.publicado,
+      })
+      .returning()
+      .get();
 
-  const creado = getProductoConRecetaById(producto.id);
+    setPackagingDeProductoTx(tx, producto.id, input.packaging);
+
+    return producto.id;
+  });
+
+  const creado = getProductoConRecetaById(productoId);
   if (!creado) {
-    throw new Error(`No se pudo leer el producto recién creado (id ${producto.id}).`);
+    throw new Error(`No se pudo leer el producto recién creado (id ${productoId}).`);
   }
   return creado;
 }
 
+/** Mismo criterio transaccional que crearProducto: update + packaging juntos. */
 export function actualizarProducto(id: number, input: ProductoInput): ProductoConReceta {
   const existente = db.select().from(productos).where(eq(productos.id, id)).get();
   if (!existente) {
     throw new Error(`No existe un producto con id ${id}.`);
   }
 
-  db.update(productos)
-    .set({
-      recetaId: input.recetaId,
-      nombrePublico: normalizarNombrePublico(input.nombrePublico),
-      descripcion: normalizarDescripcion(input.descripcion),
-      publicado: input.publicado,
-    })
-    .where(eq(productos.id, id))
-    .run();
+  db.transaction((tx) => {
+    tx.update(productos)
+      .set({
+        recetaId: input.recetaId,
+        nombrePublico: normalizarNombrePublico(input.nombrePublico),
+        descripcion: normalizarDescripcion(input.descripcion),
+        publicado: input.publicado,
+      })
+      .where(eq(productos.id, id))
+      .run();
+
+    setPackagingDeProductoTx(tx, id, input.packaging);
+  });
 
   const actualizado = getProductoConRecetaById(id);
   if (!actualizado) {

@@ -25,6 +25,15 @@ export type Unidad = (typeof UNIDADES)[number];
 export const DIAMETROS = [12, 18, 20, 22, 25] as const;
 export type Diametro = (typeof DIAMETROS)[number];
 
+// Tipo de insumo: 'ingrediente' entra en recetas (y se escala por diámetro);
+// 'packaging' se asigna directamente a un producto y nunca se escala (ver
+// src/db/precios.ts > calcularCostoProductoEnDiametro). Default 'ingrediente'
+// para que la migración que agrega esta columna no rompa las filas de
+// insumos ya existentes (todas eran ingredientes hasta la introducción de
+// packaging).
+export const TIPOS_INSUMO = ["ingrediente", "packaging"] as const;
+export type TipoInsumo = (typeof TIPOS_INSUMO)[number];
+
 // --- Insumos ---------------------------------------------------------------
 
 export const insumos = sqliteTable(
@@ -42,8 +51,12 @@ export const insumos = sqliteTable(
     // conversión x1000 cuando unidad = 'kg'); se persiste para no
     // recalcularlo en cada lectura.
     precioUnitarioBase: real("precio_unitario_base").notNull(),
+    tipo: text("tipo").notNull().default("ingrediente").$type<TipoInsumo>(),
   },
-  (t) => [check("insumos_unidad_check", sql`${t.unidad} in ('ml','g','kg','unidad')`)],
+  (t) => [
+    check("insumos_unidad_check", sql`${t.unidad} in ('ml','g','kg','unidad')`),
+    check("insumos_tipo_check", sql`${t.tipo} in ('ingrediente','packaging')`),
+  ],
 );
 
 // --- Recetas ---------------------------------------------------------------
@@ -121,6 +134,30 @@ export const productos = sqliteTable("productos", {
   imagen: text("imagen"),
   publicado: integer("publicado", { mode: "boolean" }).notNull().default(false),
 });
+
+// --- Producto <-> Insumos de packaging (N:M con cantidad) ------------------
+//
+// NO confundir con receta_insumos: receta_insumos son los ingredientes de
+// una receta (se escalan por diámetro); producto_insumos es el packaging
+// asignado directamente a un producto (nunca se escala, ver
+// src/db/precios.ts > calcularCostoProductoEnDiametro).
+
+export const productoInsumos = sqliteTable(
+  "producto_insumos",
+  {
+    productoId: integer("producto_id")
+      .notNull()
+      .references(() => productos.id, { onDelete: "cascade" }),
+    insumoId: integer("insumo_id")
+      .notNull()
+      .references(() => insumos.id, { onDelete: "cascade" }),
+    // Cantidad en la unidad base del insumo (ver insumos.unidad). A
+    // diferencia de receta_insumos, esta cantidad nunca se escala por
+    // diámetro: el packaging es el mismo cualquiera sea el tamaño.
+    cantidad: real("cantidad").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.productoId, t.insumoId] })],
+);
 
 // --- Precios (por producto + diámetro) -------------------------------------
 

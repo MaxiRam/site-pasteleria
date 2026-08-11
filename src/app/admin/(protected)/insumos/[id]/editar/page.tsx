@@ -35,6 +35,7 @@ export default async function EditarInsumoPage({
           cantidadComprada: insumo.cantidadComprada,
           unidad: insumo.unidad,
           precioCompra: insumo.precioCompra,
+          tipo: insumo.tipo,
         }}
       />
     </div>

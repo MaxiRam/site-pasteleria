@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getInsumos } from "@/db";
-import { getRecetasQueUsanInsumo } from "@/db/insumos";
+import { getInsumosPorTipo, getProductosQueUsanPackaging, getRecetasQueUsanInsumo } from "@/db/insumos";
+import { TIPOS_INSUMO, type TipoInsumo } from "@/db/schema";
 import { PencilIcon } from "@/components/icons";
 import { formatARS } from "@/lib/format";
 import { DeleteInsumoButton } from "./delete-insumo-button";
@@ -16,23 +16,57 @@ const UNIDAD_BASE: Record<string, string> = {
   unidad: "unidad",
 };
 
-export default function InsumosPage() {
-  const insumos = getInsumos();
+const NOMBRE_TAB: Record<TipoInsumo, string> = {
+  ingrediente: "Ingredientes",
+  packaging: "Packaging",
+};
+
+function tipoValido(tipo: string | undefined): TipoInsumo {
+  return TIPOS_INSUMO.includes(tipo as TipoInsumo) ? (tipo as TipoInsumo) : "ingrediente";
+}
+
+export default async function InsumosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
+  const { tipo: tipoParam } = await searchParams;
+  const tipo = tipoValido(tipoParam);
+
+  const insumos = getInsumosPorTipo(tipo);
 
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-zinc-900">Insumos</h1>
         <Link
-          href="/admin/insumos/nuevo"
+          href={`/admin/insumos/nuevo?tipo=${tipo}`}
           className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
         >
           Nuevo insumo
         </Link>
       </div>
 
+      <div className="flex gap-4 border-b border-zinc-200">
+        {TIPOS_INSUMO.map((t) => (
+          <Link
+            key={t}
+            href={`/admin/insumos?tipo=${t}`}
+            className={
+              t === tipo
+                ? "border-b-2 border-zinc-900 px-1 pb-2 text-sm font-medium text-zinc-900"
+                : "border-b-2 border-transparent px-1 pb-2 text-sm font-medium text-zinc-500 hover:text-zinc-700"
+            }
+          >
+            {NOMBRE_TAB[t]}
+          </Link>
+        ))}
+      </div>
+
       {insumos.length === 0 ? (
-        <p className="text-sm text-zinc-600">Todavía no hay insumos cargados.</p>
+        <p className="text-sm text-zinc-600">
+          Todavía no hay insumos de tipo {NOMBRE_TAB[tipo].toLowerCase()} cargados.
+        </p>
       ) : (
         <div className="overflow-x-auto rounded border border-zinc-200 bg-white">
           <table className="w-full min-w-max text-left text-sm">
@@ -73,6 +107,7 @@ export default function InsumosPage() {
                         id={insumo.id}
                         nombre={insumo.nombre}
                         recetasQueLoUsan={getRecetasQueUsanInsumo(insumo.id)}
+                        productosQueLoUsan={getProductosQueUsanPackaging(insumo.id)}
                       />
                     </div>
                   </td>
