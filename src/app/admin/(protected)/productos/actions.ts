@@ -9,31 +9,21 @@ export type ProductoFormState = { error: string } | undefined;
 export type EliminarProductoState = { error: string } | undefined;
 export type GenerarPreciosState = { error: string } | undefined;
 
-interface PackagingProductoCrudo {
-  insumoId: number;
-  cantidad: number;
-}
-
 /**
  * Valida y normaliza el FormData del form de producto (nuevo/editar). Server
  * Actions son un endpoint público reachable con cualquier POST (mismo
  * criterio que insumos/actions.ts y recetas/actions.ts): no confiar en que
  * el form solo se renderiza para un admin logueado, validar siempre acá.
  *
- * `packagingJson` es la lista dinámica de filas insumo+cantidad armada en
- * el cliente (ver producto-form.tsx) y serializada a JSON en un input
- * hidden — mismo nivel de paranoia que parseRecetaInput valida
- * insumosJson en recetas/actions.ts (JSON.parse en try/catch, validar
- * array, validar cada item, sin insumoId repetido), pero sin la validación
- * de "a lo sumo un huevo" (no aplica a packaging) y sin exigir mínimo 1
- * ítem (el packaging de un producto puede quedar vacío).
+ * El packaging NO se parsea acá: es por producto+diámetro (ver
+ * src/db/producto-insumos.ts), se edita desde /admin/precios/[id]/packaging
+ * (ver precios/actions.ts > actualizarPackagingAction), no desde este form.
  */
 function parseProductoInput(formData: FormData): ProductoInput | { error: string } {
   const nombrePublico = formData.get("nombrePublico");
   const descripcion = formData.get("descripcion");
   const recetaIdRaw = formData.get("recetaId");
   const publicado = formData.get("publicado");
-  const packagingJson = formData.get("packagingJson");
 
   if (typeof nombrePublico !== "string" || !nombrePublico.trim()) {
     return { error: "El nombre público es obligatorio." };
@@ -44,57 +34,12 @@ function parseProductoInput(formData: FormData): ProductoInput | { error: string
     return { error: "Elegí una receta válida." };
   }
 
-  if (typeof packagingJson !== "string") {
-    return { error: "Lista de packaging inválida." };
-  }
-
-  let crudo: unknown;
-  try {
-    crudo = JSON.parse(packagingJson);
-  } catch {
-    return { error: "Lista de packaging inválida (JSON malformado)." };
-  }
-
-  if (!Array.isArray(crudo)) {
-    return { error: "Lista de packaging inválida." };
-  }
-
-  const packaging: PackagingProductoCrudo[] = [];
-  const idsVistos = new Set<number>();
-
-  for (const item of crudo) {
-    if (
-      typeof item !== "object" ||
-      item === null ||
-      typeof (item as Record<string, unknown>).insumoId !== "number" ||
-      typeof (item as Record<string, unknown>).cantidad !== "number"
-    ) {
-      return { error: "Uno de los ítems de packaging tiene datos inválidos." };
-    }
-
-    const { insumoId, cantidad } = item as PackagingProductoCrudo;
-
-    if (!Number.isInteger(insumoId) || insumoId <= 0) {
-      return { error: "Uno de los ítems de packaging tiene un id inválido." };
-    }
-    if (!Number.isFinite(cantidad) || cantidad <= 0) {
-      return { error: "La cantidad de cada ítem de packaging debe ser un número mayor a 0." };
-    }
-    if (idsVistos.has(insumoId)) {
-      return { error: "No se puede repetir el mismo insumo de packaging dos veces." };
-    }
-    idsVistos.add(insumoId);
-
-    packaging.push({ insumoId, cantidad });
-  }
-
   return {
     nombrePublico,
     descripcion: typeof descripcion === "string" ? descripcion : null,
     recetaId: recetaIdNum,
     // Checkbox: solo viaja en el FormData cuando está marcado.
     publicado: publicado === "on",
-    packaging,
   };
 }
 

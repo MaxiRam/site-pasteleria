@@ -1,4 +1,3 @@
-import { getInsumosPorTipo } from "@/db/insumos";
 import { getRecetas } from "@/db/recetas";
 import { crearProductoAction } from "../actions";
 import { ProductoForm } from "../producto-form";
@@ -7,7 +6,6 @@ export const dynamic = "force-dynamic";
 
 export default function NuevoProductoPage() {
   const recetasDisponibles = getRecetas();
-  const packagingDisponible = getInsumosPorTipo("packaging");
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -15,7 +13,6 @@ export default function NuevoProductoPage() {
       <ProductoForm
         action={crearProductoAction}
         recetasDisponibles={recetasDisponibles}
-        packagingDisponible={packagingDisponible}
         submitLabel="Crear producto"
       />
     </div>

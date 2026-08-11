@@ -47,12 +47,13 @@ export interface PrecioInput {
  * cada insumo).
  *
  * Al costo de ingredientes (escalado por diámetro) se le suma el costo del
- * packaging asignado al producto (tabla producto_insumos, ver
- * src/db/producto-insumos.ts) SIN escalar: el packaging es el mismo
- * cualquiera sea el diámetro (ver proyecto.md / AGENTS.md, pedido de
- * "packaging"), así que se costea directo con calcularCostoReceta sobre las
- * cantidades tal cual están guardadas, sin pasar por
- * calcularCantidadesEscaladas.
+ * packaging asignado a ESTE producto+diámetro puntual (tabla
+ * producto_insumos, ver src/db/producto-insumos.ts) — el packaging puede
+ * ser distinto por tamaño (una torta de 12cm puede llevar una caja
+ * distinta que una de 25cm), pero para el diámetro que sea, esa cantidad
+ * nunca pasa por la fórmula de escalado geométrico: se costea directo con
+ * calcularCostoReceta sobre las cantidades tal cual están guardadas para
+ * ese diámetro, sin pasar por calcularCantidadesEscaladas.
  *
  * Es el corazón de crearPrecio/actualizarPrecio: el costo se recalcula
  * siempre a partir de este helper, nunca se confía en un valor persistido
@@ -88,7 +89,7 @@ export function calcularCostoProductoEnDiametro(productoId: number, diametro: Di
     })),
   );
 
-  const packaging = getPackagingDeProducto(productoId);
+  const packaging = getPackagingDeProducto(productoId, diametro);
   const costoPackagingSinEscalar = calcularCostoReceta(
     packaging.map((p) => ({
       cantidad: p.cantidad,

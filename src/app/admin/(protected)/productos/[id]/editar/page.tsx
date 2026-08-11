@@ -1,6 +1,4 @@
 import { notFound } from "next/navigation";
-import { getInsumosPorTipo } from "@/db/insumos";
-import { getPackagingDeProducto } from "@/db/producto-insumos";
 import { getProductoById } from "@/db/productos";
 import { getRecetas } from "@/db/recetas";
 import { actualizarProductoAction } from "../../actions";
@@ -24,8 +22,6 @@ export default async function EditarProductoPage({
   }
 
   const recetasDisponibles = getRecetas();
-  const packagingDisponible = getInsumosPorTipo("packaging");
-  const packagingActual = getPackagingDeProducto(producto.id);
   const actualizarConId = actualizarProductoAction.bind(null, producto.id);
 
   return (
@@ -36,14 +32,12 @@ export default async function EditarProductoPage({
       <ProductoForm
         action={actualizarConId}
         recetasDisponibles={recetasDisponibles}
-        packagingDisponible={packagingDisponible}
         submitLabel="Guardar cambios"
         initialValues={{
           nombrePublico: producto.nombrePublico,
           descripcion: producto.descripcion,
           recetaId: producto.recetaId,
           publicado: producto.publicado,
-          packaging: packagingActual.map((p) => ({ insumoId: p.insumoId, cantidad: p.cantidad })),
         }}
       />
     </div>

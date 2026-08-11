@@ -159,12 +159,23 @@ export const productoInsumos = sqliteTable(
     insumoId: integer("insumo_id")
       .notNull()
       .references(() => insumos.id, { onDelete: "cascade" }),
-    // Cantidad en la unidad base del insumo (ver insumos.unidad). A
-    // diferencia de receta_insumos, esta cantidad nunca se escala por
-    // diámetro: el packaging es el mismo cualquiera sea el tamaño.
+    // El packaging de un producto es distinto por tamaño (ej. una torta de
+    // 12cm puede llevar una caja chica, una de 25cm una caja grande +
+    // separadores) — por eso esta tabla es por producto+insumo+diámetro, no
+    // solo por producto+insumo. La cantidad en sí NUNCA se escala por la
+    // fórmula de escalado de recetas (ver calcularCostoProductoEnDiametro en
+    // src/db/precios.ts): para un diámetro dado, el packaging es
+    // exactamente la cantidad que el admin cargó para ese diámetro, punto
+    // — no hay ningún factor geométrico aplicado sobre esta cantidad.
+    diametro: integer("diametro").notNull().$type<Diametro>(),
+    // Cantidad en la unidad base del insumo (siempre 'unidad' para
+    // packaging, ver insumos_packaging_unidad_check).
     cantidad: real("cantidad").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.productoId, t.insumoId] })],
+  (t) => [
+    primaryKey({ columns: [t.productoId, t.insumoId, t.diametro] }),
+    check("producto_insumos_diametro_check", sql`${t.diametro} in (12,18,20,22,25)`),
+  ],
 );
 
 // --- Precios (por producto + diámetro) -------------------------------------

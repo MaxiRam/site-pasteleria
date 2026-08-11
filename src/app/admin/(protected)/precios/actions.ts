@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { actualizarPrecio, eliminarPrecio } from "@/db/precios";
+import { actualizarPrecio, eliminarPrecio, getPrecioById } from "@/db/precios";
+import { setPackagingDeProducto } from "@/db/producto-insumos";
 
 export type PrecioFormState = { error: string } | undefined;
 export type EliminarPrecioState = { error: string } | undefined;
+export type PackagingFormState = { error: string } | undefined;
 
 /**
  * Traduce errores de negocio esperables de crearPrecio/actualizarPrecio
@@ -85,6 +87,105 @@ export async function actualizarPrecioAction(
 
   revalidatePath("/admin/precios");
   revalidatePath(`/admin/precios/${id}/editar`);
+  revalidatePath("/admin");
+  redirect("/admin/precios");
+}
+
+interface PackagingItemCrudo {
+  insumoId: number;
+  cantidad: number;
+}
+
+/**
+ * Mismo nivel de paranoia que parseRecetaInput valida insumosJson en
+ * recetas/actions.ts (JSON.parse en try/catch, validar array, validar cada
+ * item, sin insumoId repetido) — pero sin exigir mínimo 1 ítem, el
+ * packaging de un producto+diámetro puede quedar vacío.
+ */
+function parsePackagingJson(formData: FormData): PackagingItemCrudo[] | { error: string } {
+  const packagingJson = formData.get("packagingJson");
+
+  if (typeof packagingJson !== "string") {
+    return { error: "Lista de packaging inválida." };
+  }
+
+  let crudo: unknown;
+  try {
+    crudo = JSON.parse(packagingJson);
+  } catch {
+    return { error: "Lista de packaging inválida (JSON malformado)." };
+  }
+
+  if (!Array.isArray(crudo)) {
+    return { error: "Lista de packaging inválida." };
+  }
+
+  const items: PackagingItemCrudo[] = [];
+  const idsVistos = new Set<number>();
+
+  for (const item of crudo) {
+    if (
+      typeof item !== "object" ||
+      item === null ||
+      typeof (item as Record<string, unknown>).insumoId !== "number" ||
+      typeof (item as Record<string, unknown>).cantidad !== "number"
+    ) {
+      return { error: "Uno de los ítems de packaging tiene datos inválidos." };
+    }
+
+    const { insumoId, cantidad } = item as PackagingItemCrudo;
+
+    if (!Number.isInteger(insumoId) || insumoId <= 0) {
+      return { error: "Uno de los ítems de packaging tiene un id inválido." };
+    }
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      return { error: "La cantidad de cada ítem de packaging debe ser un número mayor a 0." };
+    }
+    if (idsVistos.has(insumoId)) {
+      return { error: "No se puede repetir el mismo insumo de packaging dos veces." };
+    }
+    idsVistos.add(insumoId);
+
+    items.push({ insumoId, cantidad });
+  }
+
+  return items;
+}
+
+/**
+ * Reemplaza el packaging de ESTE producto+diámetro (el de `precioId`) y
+ * recalcula costoCalculado/precioSugerido con el packaging nuevo — mismo
+ * margen/precioVenta/confirmado que ya tenía, sin tocarlos (reusa
+ * actualizarPrecio entero para no duplicar el recálculo de costo).
+ */
+export async function actualizarPackagingAction(
+  precioId: number,
+  _prevState: PackagingFormState,
+  formData: FormData,
+): Promise<PackagingFormState> {
+  const parsed = parsePackagingJson(formData);
+  if ("error" in parsed) {
+    return parsed;
+  }
+
+  const precio = getPrecioById(precioId);
+  if (!precio) {
+    return { error: "No se pudo encontrar el precio a actualizar." };
+  }
+
+  try {
+    setPackagingDeProducto(precio.productoId, precio.diametro, parsed);
+    actualizarPrecio(precioId, {
+      margenPct: precio.margenPct,
+      precioVenta: precio.precioVenta,
+      confirmado: precio.confirmado,
+    });
+  } catch (e) {
+    return { error: traducirError(e, "No se pudo actualizar el packaging.") };
+  }
+
+  revalidatePath("/admin/precios");
+  revalidatePath(`/admin/precios/${precioId}/packaging`);
   revalidatePath("/admin");
   redirect("/admin/precios");
 }

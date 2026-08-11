@@ -5,7 +5,7 @@ import Link from "next/link";
 import { calcularMargenReal } from "@/lib/calc";
 import { formatARS } from "@/lib/format";
 import type { PrecioConProducto } from "@/db/precios";
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, SaveIcon } from "@/components/icons";
+import { ChevronDownIcon, ChevronUpIcon, PackageIcon, PencilIcon, SaveIcon } from "@/components/icons";
 import { actualizarPrecioAction, type PrecioFormState } from "./actions";
 import { DeletePrecioButton } from "./delete-precio-button";
 
@@ -139,6 +139,14 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
             className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
           >
             <PencilIcon className="h-4 w-4" />
+          </Link>
+          <Link
+            href={`/admin/precios/${precio.id}/packaging`}
+            aria-label={`Packaging para ${precio.diametro}cm`}
+            title={`Packaging para ${precio.diametro}cm`}
+            className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
+          >
+            <PackageIcon className="h-4 w-4" />
           </Link>
           <DeletePrecioButton
             id={precio.id}
