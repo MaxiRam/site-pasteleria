@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { getPrecios } from "@/db/precios";
-import { calcularMargenReal } from "@/lib/calc";
-import { formatARS } from "@/lib/format";
-import { DeletePrecioButton } from "./delete-precio-button";
+import { PrecioRow } from "./precio-row";
 
 // Lista debe reflejar altas/bajas/ediciones inmediatamente: no cachear la
 // prerenderización estática de esta página (mismo criterio que
@@ -15,8 +13,12 @@ export const dynamic = "force-dynamic";
  * admin/(protected)/productos/actions.ts > crearProductoAction), con el
  * margen default de cada diámetro. Para productos creados antes de esa
  * automatización, "Generar precios" en /admin/productos hace el mismo
- * backfill. Acá el admin solo ajusta margen/precio de venta/confirmado por
- * fila (o borra una fila puntual si hace falta recrearla).
+ * backfill.
+ *
+ * Margen, precio de venta y confirmado se editan directo en la fila (ver
+ * precio-row.tsx) — "Editar" solo hace falta si querés ver el costo
+ * recalculado en vivo (por si cambió el precio de algún insumo desde la
+ * última vez) antes de decidir el margen nuevo.
  */
 export default function PreciosPage() {
   const precios = getPrecios();
@@ -30,7 +32,7 @@ export default function PreciosPage() {
         <Link href="/admin/productos" className="underline">
           Productos
         </Link>
-        . Acá se ajusta margen, precio de venta y confirmación de cada uno.
+        . Margen, precio de venta y confirmado se editan directo en la fila.
       </p>
 
       <p className="text-sm text-zinc-600">
@@ -64,49 +66,7 @@ export default function PreciosPage() {
             </thead>
             <tbody>
               {precios.map((precio) => (
-                <tr key={precio.id} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-2 text-zinc-900">{precio.producto.nombrePublico}</td>
-                  <td className="px-4 py-2 text-zinc-700">{precio.diametro}cm</td>
-                  <td className="px-4 py-2 text-zinc-700">{formatARS(precio.costoCalculado)}</td>
-                  <td className="px-4 py-2 text-zinc-700">
-                    {(precio.margenPct * 100).toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-2 text-zinc-700">{formatARS(precio.precioSugerido)}</td>
-                  <td className="px-4 py-2 text-zinc-700">
-                    {precio.precioVenta !== null ? formatARS(precio.precioVenta) : "—"}
-                    {precio.confirmado && precio.precioVenta !== null && precio.precioVenta > 0 ? (
-                      <span className="ml-1 text-xs text-zinc-500">
-                        ({(calcularMargenReal(precio.costoCalculado, precio.precioVenta) * 100).toFixed(1)}%)
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span
-                      className={
-                        precio.confirmado
-                          ? "rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
-                          : "rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600"
-                      }
-                    >
-                      {precio.confirmado ? "Sí" : "No"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href={`/admin/precios/${precio.id}/editar`}
-                        className="text-sm text-zinc-700 hover:underline"
-                      >
-                        Editar
-                      </Link>
-                      <DeletePrecioButton
-                        id={precio.id}
-                        nombreProducto={precio.producto.nombrePublico}
-                        diametro={precio.diametro}
-                      />
-                    </div>
-                  </td>
-                </tr>
+                <PrecioRow key={precio.id} precio={precio} />
               ))}
             </tbody>
           </table>
