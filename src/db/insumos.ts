@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { calcularPrecioUnitarioBase } from "@/lib/calc";
 import { db } from "./index";
-import { insumos, type Unidad } from "./schema";
+import { insumos, recetaInsumos, recetas, type Unidad } from "./schema";
 
 /**
  * Helpers de insert/update/delete de `insumos`. Ver proyecto.md, sección
@@ -65,13 +65,31 @@ export function getInsumoById(id: number): Insumo | undefined {
 }
 
 /**
- * PENDIENTE (revisar cuando exista UI de Recetas): `receta_insumos.insumo_id`
- * tiene FK con `onDelete: cascade` hacia `insumos` (ver src/db/schema.ts), así
- * que borrar un insumo en uso borra silenciosamente las filas de
- * receta_insumos que lo usan. Sin UI de Recetas todavía no hay forma de
- * advertir al admin de ese impacto (similar al pendiente ya documentado para
- * productos.receta_id); cuando exista, conviene chequear uso previo y
- * advertir antes de borrar en vez de dejarlo pasar en silencio como ahora.
+ * Nombres de las recetas que usan este insumo (para advertir antes de
+ * borrar, ver eliminarInsumo). Puede haber más de una fila de
+ * receta_insumos por receta... en realidad no, la PK de receta_insumos es
+ * (recetaId, insumoId), así que a lo sumo una fila por receta — no hace
+ * falta dedup.
+ */
+export function getRecetasQueUsanInsumo(insumoId: number): string[] {
+  return db
+    .select({ nombre: recetas.nombre })
+    .from(recetaInsumos)
+    .innerJoin(recetas, eq(recetaInsumos.recetaId, recetas.id))
+    .where(eq(recetaInsumos.insumoId, insumoId))
+    .all()
+    .map((r) => r.nombre);
+}
+
+/**
+ * `receta_insumos.insumo_id` tiene FK con `onDelete: cascade` hacia
+ * `insumos` (ver src/db/schema.ts): borrar un insumo en uso borra en
+ * cascada las filas de receta_insumos que lo usan, sacándolo
+ * silenciosamente de esas recetas. eliminarInsumo en sí no bloquea el
+ * borrado (mismo criterio que eliminarProducto: la cascada es válida,
+ * solo hay que advertir antes) — la advertencia con las recetas afectadas
+ * vive en la UI (ver insumos/page.tsx + delete-insumo-button.tsx), que usa
+ * getRecetasQueUsanInsumo antes de mostrar el confirm().
  */
 export function eliminarInsumo(id: number): void {
   db.delete(insumos).where(eq(insumos.id, id)).run();
