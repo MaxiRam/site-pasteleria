@@ -7,6 +7,7 @@ import {
   sqliteTable,
   text,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
 /**
@@ -73,8 +74,32 @@ export const recetaInsumos = sqliteTable(
       .references(() => insumos.id, { onDelete: "cascade" }),
     // Cantidad en la unidad base del insumo (ver insumos.unidad), a diametroBase.
     cantidad: real("cantidad").notNull(),
+    // Marca explícita de cuál insumo de la receta es el huevo, para el
+    // redondeo especial de escalado (ver src/lib/calc/escalado.ts, comentario
+    // de diseño "huevo vs. unidad === 'unidad'"). calc-engine no infiere esto
+    // del catálogo de insumos; alguien tiene que persistirlo, y ese alguien
+    // es esta columna.
+    esHuevo: integer("es_huevo", { mode: "boolean" }).notNull().default(false),
   },
-  (t) => [primaryKey({ columns: [t.recetaId, t.insumoId] })],
+  (t) => [
+    primaryKey({ columns: [t.recetaId, t.insumoId] }),
+    // Defensa en profundidad de "a lo sumo un huevo por receta": el guard
+    // real de negocio vive en la capa de aplicación (crearReceta/
+    // actualizarReceta en src/db/recetas.ts, y el guard de
+    // calcularCantidadesEscaladas), pero un índice único parcial a nivel DB
+    // evita que cualquier otro camino de escritura (futuro, o un bug) deje
+    // dos filas con esHuevo = true en la misma receta.
+    //
+    // Nota Drizzle: `unique().on(...)` (UniqueConstraintBuilder) NO expone
+    // `.where()` en drizzle-orm/sqlite-core — un unique constraint clásico
+    // siempre es total. El partial index sí existe, pero como *índice*:
+    // `uniqueIndex().on(...).where(...)` (ver
+    // node_modules/drizzle-orm/sqlite-core/indexes.d.ts, IndexBuilder.where).
+    // Por eso usamos uniqueIndex en vez de unique acá.
+    uniqueIndex("receta_insumos_una_receta_un_huevo")
+      .on(t.recetaId)
+      .where(sql`${t.esHuevo} = 1`),
+  ],
 );
 
 // --- Productos (vitrina pública de una receta) -----------------------------

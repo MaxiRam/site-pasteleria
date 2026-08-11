@@ -1,0 +1,2 @@
+ALTER TABLE `receta_insumos` ADD `es_huevo` integer DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX `receta_insumos_una_receta_un_huevo` ON `receta_insumos` (`receta_id`) WHERE "receta_insumos"."es_huevo" = 1;
