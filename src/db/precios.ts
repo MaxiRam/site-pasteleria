@@ -2,8 +2,13 @@ import { eq } from "drizzle-orm";
 import { db } from "./index";
 import { getProductoById, type ProductoConReceta } from "./productos";
 import { getRecetaById } from "./recetas";
-import { calcularCantidadesEscaladas, calcularCostoReceta, calcularPrecioSugerido } from "@/lib/calc";
-import { precios, type Diametro } from "./schema";
+import {
+  calcularCantidadesEscaladas,
+  calcularCostoReceta,
+  calcularPrecioSugerido,
+  MARGEN_POR_DIAMETRO,
+} from "@/lib/calc";
+import { DIAMETROS, precios, type Diametro } from "./schema";
 
 /**
  * Helpers de insert/update/delete/read de `precios`. Ver proyecto.md,
@@ -122,6 +127,41 @@ export function crearPrecio(input: PrecioInput): PrecioConProducto {
     throw new Error(`No se pudo leer el precio recién creado (id ${precio.id}).`);
   }
   return creado;
+}
+
+/**
+ * Genera automáticamente los precios que le falten a un producto para
+ * cubrir los 5 diámetros soportados (DIAMETROS) — evita que el admin tenga
+ * que crear "Nuevo precio" a mano una vez por diámetro. Cada precio nuevo
+ * usa el margen default de MARGEN_POR_DIAMETRO para ese diámetro,
+ * `precioVenta: null` y `confirmado: false` (el admin los revisa/confirma
+ * después desde la edición). Diámetros que ya tienen un precio para este
+ * producto se dejan como están, no se pisan.
+ *
+ * Se llama automáticamente al crear un producto (ver
+ * admin/(protected)/productos/actions.ts) y también está expuesta como
+ * acción manual ("Generar precios") para productos que ya existían antes
+ * de esa automatización.
+ */
+export function generarPreciosParaProducto(productoId: number): PrecioConProducto[] {
+  const existentes = db
+    .select({ diametro: precios.diametro })
+    .from(precios)
+    .where(eq(precios.productoId, productoId))
+    .all();
+  const diametrosExistentes = new Set(existentes.map((p) => p.diametro));
+
+  const faltantes = DIAMETROS.filter((d) => !diametrosExistentes.has(d));
+
+  return faltantes.map((diametro) =>
+    crearPrecio({
+      productoId,
+      diametro,
+      margenPct: MARGEN_POR_DIAMETRO[diametro],
+      precioVenta: null,
+      confirmado: false,
+    }),
+  );
 }
 
 /**

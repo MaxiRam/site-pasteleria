@@ -2,13 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  actualizarPrecio,
-  crearPrecio,
-  eliminarPrecio,
-  type PrecioInput,
-} from "@/db/precios";
-import { DIAMETROS, type Diametro } from "@/db/schema";
+import { actualizarPrecio, eliminarPrecio } from "@/db/precios";
 
 export type PrecioFormState = { error: string } | undefined;
 export type EliminarPrecioState = { error: string } | undefined;
@@ -37,12 +31,12 @@ function traducirError(e: unknown, fallback: string): string {
 
 /**
  * `margenPct` viaja en el form como porcentaje humano (ej. "60" = 60%, ver
- * precio-form.tsx / editar-precio-form.tsx) — se convierte a fracción
- * [0,1) recién acá, antes de llegar a la capa de datos (que espera
- * fracción, mismo formato que `MARGEN_POR_DIAMETRO`). El rango válido no se
- * valida en este parser: si el admin ingresa un valor fuera de [0,1) una
- * vez convertido, se deja propagar la excepción de calcularPrecioSugerido y
- * se traduce en el catch de cada action (ver traducirError arriba).
+ * editar-precio-form.tsx) — se convierte a fracción [0,1) recién acá, antes
+ * de llegar a la capa de datos (que espera fracción, mismo formato que
+ * `MARGEN_POR_DIAMETRO`). El rango válido no se valida en este parser: si
+ * el admin ingresa un valor fuera de [0,1) una vez convertido, se deja
+ * propagar la excepción de calcularPrecioSugerido y se traduce en el catch
+ * de cada action (ver traducirError arriba).
  */
 function parseComun(formData: FormData):
   | { margenPct: number; precioVenta: number | null; confirmado: boolean }
@@ -71,52 +65,6 @@ function parseComun(formData: FormData):
     // Checkbox: solo viaja en el FormData cuando está marcado.
     confirmado: confirmado === "on",
   };
-}
-
-function parsePrecioInputParaCrear(formData: FormData): PrecioInput | { error: string } {
-  const productoIdRaw = formData.get("productoId");
-  const diametroRaw = formData.get("diametro");
-
-  const productoIdNum = typeof productoIdRaw === "string" ? Number(productoIdRaw) : NaN;
-  if (!Number.isInteger(productoIdNum) || productoIdNum <= 0) {
-    return { error: "Elegí un producto válido." };
-  }
-
-  const diametroNum = typeof diametroRaw === "string" ? Number(diametroRaw) : NaN;
-  if (!DIAMETROS.includes(diametroNum as Diametro)) {
-    return { error: "Diámetro inválido." };
-  }
-
-  const comun = parseComun(formData);
-  if ("error" in comun) {
-    return comun;
-  }
-
-  return {
-    productoId: productoIdNum,
-    diametro: diametroNum as Diametro,
-    ...comun,
-  };
-}
-
-export async function crearPrecioAction(
-  _prevState: PrecioFormState,
-  formData: FormData,
-): Promise<PrecioFormState> {
-  const parsed = parsePrecioInputParaCrear(formData);
-  if ("error" in parsed) {
-    return parsed;
-  }
-
-  try {
-    crearPrecio(parsed);
-  } catch (e) {
-    return { error: traducirError(e, "No se pudo crear el precio.") };
-  }
-
-  revalidatePath("/admin/precios");
-  revalidatePath("/admin");
-  redirect("/admin/precios");
 }
 
 export async function actualizarPrecioAction(

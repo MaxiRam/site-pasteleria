@@ -38,3 +38,27 @@ export function calcularPrecioSugerido(costo: number, margenPct: number): number
 
   return costo / (1 - margenPct);
 }
+
+/**
+ * Margen real efectivo dado un costo y un precio de venta ya decidido —
+ * inversa de calcularPrecioSugerido: si `precioSugerido = costo / (1 -
+ * margen)`, entonces `margen = (precioVenta - costo) / precioVenta`.
+ *
+ * Se usa para mostrarle al admin qué margen real terminó quedando cuando
+ * carga un precio de venta manual distinto del sugerido (ver
+ * admin/(protected)/precios/page.tsx) — no participa del cálculo de
+ * precioSugerido, es solo informativo.
+ *
+ * `precioVenta <= 0` no tiene margen real definido (división por cero o
+ * negativo sin sentido de negocio), se lanza explícito en vez de devolver
+ * Infinity/NaN en silencio.
+ */
+export function calcularMargenReal(costo: number, precioVenta: number): number {
+  if (precioVenta <= 0) {
+    throw new Error(
+      `Precio de venta inválido: ${precioVenta}. Debe ser mayor a 0 para calcular un margen real.`,
+    );
+  }
+
+  return (precioVenta - costo) / precioVenta;
+}
