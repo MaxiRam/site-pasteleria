@@ -37,6 +37,14 @@ function parseInsumoInput(formData: FormData): InsumoInput | { error: string } {
     return { error: "Tipo de insumo inválido." };
   }
 
+  // Packaging solo se mide en 'unidad' (no tiene sentido "0.5g de caja") —
+  // mismo CHECK a nivel DB (insumos_packaging_unidad_check en schema.ts),
+  // validado también acá para un mensaje de negocio en vez de un error
+  // crudo de constraint si algo bypassea el <select> reactivo del form.
+  if (tipo === "packaging" && unidad !== "unidad") {
+    return { error: "Los insumos de tipo packaging solo pueden medirse en 'unidad'." };
+  }
+
   const cantidadNum = typeof cantidadComprada === "string" ? Number(cantidadComprada) : NaN;
   if (!Number.isFinite(cantidadNum) || cantidadNum <= 0) {
     return { error: "La cantidad comprada debe ser un número mayor a 0." };

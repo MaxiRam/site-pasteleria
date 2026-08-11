@@ -56,6 +56,14 @@ export const insumos = sqliteTable(
   (t) => [
     check("insumos_unidad_check", sql`${t.unidad} in ('ml','g','kg','unidad')`),
     check("insumos_tipo_check", sql`${t.tipo} in ('ingrediente','packaging')`),
+    // Packaging solo se mide en 'unidad' (no tiene sentido "0.5g de caja").
+    // A diferencia de la regla de setPackagingDeProducto (cruza insumos +
+    // producto_insumos, dos tablas, no puede ser CHECK), esta regla vive
+    // toda en insumos — sí se puede modelar como CHECK.
+    check(
+      "insumos_packaging_unidad_check",
+      sql`${t.tipo} != 'packaging' or ${t.unidad} = 'unidad'`,
+    ),
   ],
 );
 

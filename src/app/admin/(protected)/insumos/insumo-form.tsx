@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { TIPOS_INSUMO, UNIDADES, type TipoInsumo, type Unidad } from "@/db/schema";
 import type { InsumoFormState } from "./actions";
 
@@ -40,6 +40,23 @@ export function InsumoForm({
     action,
     undefined,
   );
+
+  const [tipo, setTipo] = useState<TipoInsumo>(
+    initialValues?.tipo ?? defaultTipo ?? TIPOS_INSUMO[0],
+  );
+  const [unidad, setUnidad] = useState<Unidad>(initialValues?.unidad ?? UNIDADES[0]);
+
+  // Packaging solo se mide en 'unidad' (no tiene sentido "0.5g de caja",
+  // ver insumos_packaging_unidad_check en schema.ts) — al elegir packaging,
+  // la unidad se fuerza a 'unidad' y el <select> solo ofrece esa opción.
+  function handleTipoChange(nuevoTipo: TipoInsumo) {
+    setTipo(nuevoTipo);
+    if (nuevoTipo === "packaging") {
+      setUnidad("unidad");
+    }
+  }
+
+  const unidadesDisponibles = tipo === "packaging" ? (["unidad"] as const) : UNIDADES;
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
@@ -84,15 +101,19 @@ export function InsumoForm({
           id="unidad"
           name="unidad"
           required
-          defaultValue={initialValues?.unidad ?? UNIDADES[0]}
+          value={unidad}
+          onChange={(e) => setUnidad(e.target.value as Unidad)}
           className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         >
-          {UNIDADES.map((unidad) => (
-            <option key={unidad} value={unidad}>
-              {unidad}
+          {unidadesDisponibles.map((u) => (
+            <option key={u} value={u}>
+              {u}
             </option>
           ))}
         </select>
+        {tipo === "packaging" ? (
+          <p className="text-xs text-zinc-500">Packaging solo se mide en &quot;unidad&quot;.</p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-1">
@@ -122,7 +143,8 @@ export function InsumoForm({
           id="tipo"
           name="tipo"
           required
-          defaultValue={initialValues?.tipo ?? defaultTipo ?? TIPOS_INSUMO[0]}
+          value={tipo}
+          onChange={(e) => handleTipoChange(e.target.value as TipoInsumo)}
           className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         >
           {TIPOS_INSUMO.map((tipo) => (
