@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getInsumos } from "@/db";
+import { getRecetasQueUsanInsumo } from "@/db/insumos";
 import { formatARS } from "@/lib/format";
 import { DeleteInsumoButton } from "./delete-insumo-button";
 
@@ -65,7 +66,11 @@ export default function InsumosPage() {
                       >
                         Editar
                       </Link>
-                      <DeleteInsumoButton id={insumo.id} nombre={insumo.nombre} />
+                      <DeleteInsumoButton
+                        id={insumo.id}
+                        nombre={insumo.nombre}
+                        recetasQueLoUsan={getRecetasQueUsanInsumo(insumo.id)}
+                      />
                     </div>
                   </td>
                 </tr>
