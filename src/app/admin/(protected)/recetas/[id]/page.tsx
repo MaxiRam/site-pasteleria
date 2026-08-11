@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecetaById } from "@/db/recetas";
 import { DIAMETROS } from "@/db/schema";
 import { calcularCantidadesEscaladas, calcularCostoReceta } from "@/lib/calc";
-import { EscaladoSlider, type EscaladoPorDiametro } from "../escalado-slider";
+import { EscaladoTabs, type EscaladoPorDiametro } from "../escalado-tabs";
 
 // El detalle depende del :id de la URL — nunca debe servirse desde una
 // prerenderización estática compartida entre distintos ids.
@@ -41,7 +41,7 @@ export default async function RecetaDetallePage({
   // soportados, cantidades escaladas + costo total (ver proyecto.md, sección
   // "Recetas" > "Escalado por tamaño" / "Costo total de la receta"). Se
   // resuelve todo a datos planos (sin Map) acá en el server component,
-  // porque EscaladoSlider es un client component y un Map no es serializable
+  // porque EscaladoTabs es un client component y un Map no es serializable
   // como prop de server a client.
   const porDiametro: EscaladoPorDiametro[] = DIAMETROS.map((diametroDestino) => {
     const escaladas = calcularCantidadesEscaladas(
@@ -93,7 +93,7 @@ export default async function RecetaDetallePage({
         Diámetro base cargado: <span className="font-medium">{receta.diametroBase}cm</span>
       </p>
 
-      <EscaladoSlider porDiametro={porDiametro} diametroBase={receta.diametroBase} />
+      <EscaladoTabs porDiametro={porDiametro} diametroBase={receta.diametroBase} />
     </div>
   );
 }

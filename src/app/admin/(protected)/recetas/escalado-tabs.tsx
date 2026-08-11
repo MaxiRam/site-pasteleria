@@ -23,13 +23,18 @@ function formatCantidad(n: number): string {
 }
 
 /**
- * Slider para elegir un diámetro entre los 5 soportados y ver solo la
- * lista de ingredientes escalados de ESE tamaño (antes se mostraban los 5
- * en simultáneo como una grilla de cards). El cálculo por diámetro ya
- * viene resuelto desde el server (page.tsx) — este componente solo elige
- * cuál mostrar, no recalcula nada.
+ * Segmented control para elegir un diámetro entre los 5 soportados y ver
+ * solo la lista de ingredientes escalados de ESE tamaño (antes se
+ * mostraban los 5 en simultáneo como una grilla de cards). Se descartó
+ * `<input type="range">`: el navegador rellena el tramo izquierdo del
+ * track hasta el thumb con el accent-color (relleno negro no deseado), y
+ * además un slider continuo no es el control correcto para 5 valores
+ * discretos fijos — un grupo de botones sí lo es.
+ *
+ * El cálculo por diámetro ya viene resuelto desde el server (page.tsx) —
+ * este componente solo elige cuál mostrar, no recalcula nada.
  */
-export function EscaladoSlider({
+export function EscaladoTabs({
   porDiametro,
   diametroBase,
 }: {
@@ -46,32 +51,27 @@ export function EscaladoSlider({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <input
-          type="range"
-          min={0}
-          max={porDiametro.length - 1}
-          step={1}
-          value={indice}
-          onChange={(e) => setIndice(Number(e.target.value))}
-          className="w-full max-w-sm accent-zinc-900"
-        />
-        <div className="flex w-full max-w-sm justify-between text-xs text-zinc-500">
-          {porDiametro.map((p, i) => (
-            <button
-              key={p.diametro}
-              type="button"
-              onClick={() => setIndice(i)}
-              className={
-                i === indice
-                  ? "font-semibold text-zinc-900"
-                  : "hover:text-zinc-700"
-              }
-            >
-              {p.diametro}cm
-            </button>
-          ))}
-        </div>
+      <div
+        role="tablist"
+        aria-label="Diámetro"
+        className="inline-flex w-fit rounded border border-zinc-300 bg-white p-0.5"
+      >
+        {porDiametro.map((p, i) => (
+          <button
+            key={p.diametro}
+            type="button"
+            role="tab"
+            aria-selected={i === indice}
+            onClick={() => setIndice(i)}
+            className={
+              i === indice
+                ? "rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
+                : "rounded px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
+            }
+          >
+            {p.diametro}cm
+          </button>
+        ))}
       </div>
 
       <div className="flex max-w-sm flex-col gap-3 rounded border border-zinc-200 bg-white p-4">
