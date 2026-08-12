@@ -115,3 +115,33 @@ Admin
 
 - **Moneda**: ARS (peso argentino).
 - **Imágenes de productos**: upload propio. Hasta implementar el upload, usar placeholder.
+
+## Deploy (Vercel + Turso)
+
+El `buildCommand` de `vercel.json` corre, en orden:
+
+```
+npm run db:migrate && npm run db:seed && npm run build
+```
+
+- **Migraciones automáticas en cada deploy.** Son idempotentes (drizzle lleva
+  registro en `__drizzle_migrations`), así que redeployar no reaplica nada. Si una
+  migración falla, el `&&` corta y el deploy se cae **antes** del build: nunca queda
+  código nuevo corriendo contra un schema viejo.
+- **Seed del admin**, también idempotente (no pisa un admin existente). Si faltan
+  `ADMIN_EMAIL`/`ADMIN_PASSWORD` avisa y sigue, sin romper el deploy.
+
+Env vars necesarias en Vercel:
+
+- `DATABASE_URL` + `DATABASE_AUTH_TOKEN`, o las que inyecta la integración de Turso
+  (`<proyecto>_TURSO_DATABASE_URL` / `<proyecto>_TURSO_AUTH_TOKEN`; se buscan por
+  sufijo, ver `src/db/path.ts`). **`DATABASE_URL` tiene precedencia**: si quedó una
+  vieja apuntando a un archivo local, le gana a la de Turso y la app falla con un
+  error explícito (ver `getDb()` en `src/db/index.ts`).
+- `SESSION_SECRET`.
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` solo si se quiere que el deploy seedee el admin.
+
+**Ojo con los previews**: si comparten env vars con producción, apuntan a la misma DB
+de Turso y sus migraciones se aplican ahí. Una migración nueva en una rama de preview
+toca la DB de producción antes de que se mergee. Para separarlos hace falta una DB de
+Turso distinta por environment.
