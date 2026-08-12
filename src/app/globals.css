@@ -49,6 +49,17 @@
 }
 
 :root {
+  /*
+   * La UI arranca en claro y no hay toggle de tema todavía: la variante .dark
+   * de abajo existe pero nunca se activa (nadie pone esa clase en el <html>).
+   * Declarar color-scheme evita que un navegador en modo oscuro le meta sus
+   * propios ajustes a los controles de formulario —autofill, el ojito de "ver
+   * contraseña", scrollbars— y termine pintando texto claro adentro de un
+   * input blanco. Eso no se arregla con colores en CSS, lo mete el navegador.
+   * Cuando exista el toggle, esto pasa a `light dark` y la clase .dark manda.
+   */
+  color-scheme: light;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
