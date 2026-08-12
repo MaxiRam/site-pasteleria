@@ -22,30 +22,45 @@ function normalizarDatabaseUrl(url: string): string {
   return `file:${url}`;
 }
 
-// La integración de Turso de Vercel inyecta las env vars con el nombre del
-// proyecto como prefijo (site_pasteleria_TURSO_DATABASE_URL /
-// site_pasteleria_TURSO_AUTH_TOKEN) en vez de DATABASE_URL/DATABASE_AUTH_TOKEN
-// — se usan como fallback para no tener que renombrarlas a mano en el
-// dashboard. En local (sin ninguna de las dos) cae al archivo default.
-const urlConfigurada = process.env.DATABASE_URL ?? process.env.site_pasteleria_TURSO_DATABASE_URL;
-
 /**
- * Solo un warning, no un throw: este módulo se evalúa también cuando
- * Next.js "recolecta datos de página" en build (hasta para rutas
- * force-dynamic, que nunca se prerenderizan) — un throw acá tumbaría el
- * build entero en Vercel aunque las env vars de Turso sí estén disponibles
- * en runtime real y todo funcione bien ahí. Si de verdad faltan en runtime,
- * la primera query real contra el fallback local va a fallar con su propio
- * error, en el momento correcto (una request, no el build).
+ * Busca una env var por su nombre exacto y, si no está, por sufijo.
+ *
+ * La integración de Turso de Vercel inyecta las env vars con el nombre del
+ * proyecto como prefijo (site_pasteleria_TURSO_DATABASE_URL /
+ * site_pasteleria_TURSO_AUTH_TOKEN) en vez de
+ * DATABASE_URL/DATABASE_AUTH_TOKEN. Se busca por sufijo en vez de hardcodear
+ * ese prefijo para que renombrar el proyecto en Vercel no haga caer la
+ * config al archivo local en silencio.
+ *
+ * Se ignoran los valores vacíos (no solo los ausentes): una env var definida
+ * pero en blanco en el dashboard de Vercel tiene que comportarse igual que
+ * una que no está, no colarse como URL válida.
  */
-if (!urlConfigurada && process.env.VERCEL) {
-  console.error(
-    "Falta DATABASE_URL o site_pasteleria_TURSO_DATABASE_URL en las env vars de Vercel — " +
-      "cayendo al archivo SQLite local (file:./data/dev.db), que no existe en este entorno. " +
-      "Revisá Settings > Environment Variables en el proyecto de Vercel.",
-  );
+function envPorNombreOSufijo(nombre: string, sufijo: string): string | undefined {
+  const directo = process.env[nombre];
+  if (directo) {
+    return directo;
+  }
+
+  const clave = Object.keys(process.env).find((k) => k.endsWith(sufijo) && process.env[k]);
+  return clave ? process.env[clave] : undefined;
 }
 
+const urlConfigurada = envPorNombreOSufijo("DATABASE_URL", "_TURSO_DATABASE_URL");
+
+/**
+ * `true` si la URL vino de una env var real; `false` si se cayó al archivo
+ * local por default. La validación de "esto no puede pasar en producción"
+ * NO vive acá: este módulo se evalúa también cuando Next.js "recolecta
+ * datos de página" en build (hasta para rutas force-dynamic, que nunca se
+ * prerenderizan), y un throw a nivel módulo tumbaría el build entero. Se
+ * valida en src/db/index.ts > getDb(), que es lazy y solo corre en una
+ * request real.
+ */
+export const DATABASE_URL_CONFIGURADA = urlConfigurada !== undefined;
+
 export const DATABASE_URL = normalizarDatabaseUrl(urlConfigurada ?? "file:./data/dev.db");
-export const DATABASE_AUTH_TOKEN =
-  process.env.DATABASE_AUTH_TOKEN ?? process.env.site_pasteleria_TURSO_AUTH_TOKEN;
+export const DATABASE_AUTH_TOKEN = envPorNombreOSufijo(
+  "DATABASE_AUTH_TOKEN",
+  "_TURSO_AUTH_TOKEN",
+);

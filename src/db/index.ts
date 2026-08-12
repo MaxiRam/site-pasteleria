@@ -2,7 +2,7 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { DATABASE_AUTH_TOKEN, DATABASE_URL } from "./path";
+import { DATABASE_AUTH_TOKEN, DATABASE_URL, DATABASE_URL_CONFIGURADA } from "./path";
 import * as schema from "./schema";
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -25,6 +25,21 @@ let dbInstance: Db | undefined;
 function getDb(): Db {
   if (dbInstance) {
     return dbInstance;
+  }
+
+  // Fail-fast con mensaje claro. Acá sí se puede tirar: getDb() es lazy, así
+  // que esto solo corre en una request real, nunca durante el build (ver
+  // comentario de arriba). Sin esto, una env var faltante o vacía cae al
+  // archivo local, que en Vercel no existe, y el síntoma es un "Failed
+  // query" opaco en cada request en vez del problema real de config.
+  if (!DATABASE_URL_CONFIGURADA && process.env.VERCEL) {
+    throw new Error(
+      "Falta la URL de la base de datos: definí DATABASE_URL (o dejá que la integración " +
+        "de Turso inyecte <proyecto>_TURSO_DATABASE_URL) en Settings > Environment " +
+        "Variables del proyecto de Vercel. Ojo que una env var definida pero vacía " +
+        "cuenta como faltante. Sin eso la app cae a un archivo SQLite local " +
+        "(file:./data/dev.db) que no existe en este entorno.",
+    );
   }
 
   if (DATABASE_URL.startsWith("file:")) {
@@ -67,9 +82,19 @@ function getDb(): Db {
 // (38+ call sites en src/db/*.ts) usa `db.select()/.insert()/.transaction()`
 // como si fuera el objeto real — este Proxy reenvía cada acceso a la
 // instancia real, creándola recién en el primer acceso.
+//
+// Los métodos se devuelven bindeados a la instancia real a propósito. Sin el
+// bind, `db.select()` corre con `this` = Proxy, y como el target es un `{}`
+// vacío sin trap de getPrototypeOf, `this instanceof ...` y
+// `Object.getPrototypeOf(this).constructor` (que es justo lo que usa `is()`
+// de drizzle, ver node_modules/drizzle-orm/entity.cjs) darían mal. Hoy
+// drizzle no hace ninguna de las dos cosas en el camino de sqlite-core /
+// libsql, pero un upgrade que las agregue rompería en silencio.
 export const db: Db = new Proxy({} as Db, {
-  get(_target, prop, receiver) {
-    return Reflect.get(getDb(), prop, receiver);
+  get(_target, prop) {
+    const real = getDb();
+    const valor = Reflect.get(real, prop);
+    return typeof valor === "function" ? valor.bind(real) : valor;
   },
 });
 
