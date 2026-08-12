@@ -9,8 +9,8 @@ import { GenerarPreciosButton } from "./generar-precios-button";
 // insumos/recetas).
 export const dynamic = "force-dynamic";
 
-export default function ProductosPage() {
-  const productos = getProductos();
+export default async function ProductosPage() {
+  const productos = await getProductos();
 
   return (
     <div className="flex flex-1 flex-col gap-6">

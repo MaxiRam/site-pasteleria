@@ -42,7 +42,7 @@ export async function login(
     return { error: GENERIC_LOGIN_ERROR };
   }
 
-  const admin = db.select().from(admins).where(eq(admins.email, email)).get();
+  const [admin] = await db.select().from(admins).where(eq(admins.email, email));
 
   // Si el email no existe, igual corremos verifyPassword (contra un hash
   // dummy) para pagar el mismo costo de scrypt que la rama de password

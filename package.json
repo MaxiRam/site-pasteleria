@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
-    "better-sqlite3": "^13.0.3",
+    "@libsql/client": "^0.17.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -44,7 +43,6 @@
     "vitest": "^4.1.10"
   },
   "allowScripts": {
-    "better-sqlite3@13.0.3": true,
     "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
     "esbuild@0.28.1": true,

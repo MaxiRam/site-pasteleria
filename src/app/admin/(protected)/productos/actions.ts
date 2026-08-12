@@ -52,9 +52,9 @@ export async function crearProductoAction(
     return parsed;
   }
 
-  let producto: ReturnType<typeof crearProducto>;
+  let producto: Awaited<ReturnType<typeof crearProducto>>;
   try {
-    producto = crearProducto(parsed);
+    producto = await crearProducto(parsed);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo crear el producto." };
   }
@@ -63,7 +63,7 @@ export async function crearProductoAction(
   // producto (margen default por diámetro, sin confirmar todavía) — el
   // admin ya no tiene que crear "Nuevo precio" a mano una vez por diámetro,
   // ver src/db/precios.ts > generarPreciosParaProducto.
-  generarPreciosParaProducto(producto.id);
+  await generarPreciosParaProducto(producto.id);
 
   revalidatePath("/admin/productos");
   revalidatePath("/admin/precios");
@@ -82,7 +82,7 @@ export async function generarPreciosAction(
   _formData: FormData,
 ): Promise<GenerarPreciosState> {
   try {
-    generarPreciosParaProducto(productoId);
+    await generarPreciosParaProducto(productoId);
   } catch (e) {
     return {
       error: e instanceof Error ? e.message : "No se pudieron generar los precios.",
@@ -105,7 +105,7 @@ export async function actualizarProductoAction(
   }
 
   try {
-    actualizarProducto(id, parsed);
+    await actualizarProducto(id, parsed);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo actualizar el producto." };
   }
@@ -129,7 +129,7 @@ export async function eliminarProductoAction(
   _prevState: EliminarProductoState,
   _formData: FormData,
 ): Promise<EliminarProductoState> {
-  eliminarProducto(id);
+  await eliminarProducto(id);
   revalidatePath("/admin/productos");
   revalidatePath("/admin");
   return undefined;

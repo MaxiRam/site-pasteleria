@@ -15,9 +15,11 @@ export const dynamic = "force-dynamic";
  * ?tipo= como query param con navegación de página completa por cada
  * cambio de pestaña.
  */
-export default function InsumosPage() {
-  const ingredientes = getInsumosPorTipo("ingrediente");
-  const packaging = getInsumosPorTipo("packaging");
+export default async function InsumosPage() {
+  const [ingredientes, packaging] = await Promise.all([
+    getInsumosPorTipo("ingrediente"),
+    getInsumosPorTipo("packaging"),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col gap-6">

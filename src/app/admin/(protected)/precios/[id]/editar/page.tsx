@@ -16,7 +16,7 @@ export default async function EditarPrecioPage({
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const precio = Number.isFinite(id) ? getPrecioById(id) : undefined;
+  const precio = Number.isFinite(id) ? await getPrecioById(id) : undefined;
   if (!precio) {
     notFound();
   }
@@ -27,7 +27,7 @@ export default async function EditarPrecioPage({
   // el número real antes de decidir el margen nuevo, en vez de un valor
   // persistido que puede haber quedado desactualizado por cambios en el
   // precio de los insumos.
-  const costoActual = calcularCostoProductoEnDiametro(precio.productoId, precio.diametro);
+  const costoActual = await calcularCostoProductoEnDiametro(precio.productoId, precio.diametro);
   const precioSugeridoActual = calcularPrecioSugerido(costoActual, precio.margenPct);
 
   const actualizarConId = actualizarPrecioAction.bind(null, precio.id);

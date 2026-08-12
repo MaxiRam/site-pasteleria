@@ -4,8 +4,8 @@ import { ProductoForm } from "../producto-form";
 
 export const dynamic = "force-dynamic";
 
-export default function NuevoProductoPage() {
-  const recetasDisponibles = getRecetas();
+export default async function NuevoProductoPage() {
+  const recetasDisponibles = await getRecetas();
 
   return (
     <div className="flex flex-1 flex-col gap-6">

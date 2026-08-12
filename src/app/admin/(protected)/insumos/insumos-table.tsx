@@ -25,10 +25,27 @@ const UNIDAD_BASE: Record<string, string> = {
  * consultas de "quién usa este insumo" (para la advertencia de borrado) se
  * resuelven acá mismo, no hace falta pasarlas desde page.tsx.
  */
-export function InsumosTable({ insumos }: { insumos: Insumo[] }) {
+export async function InsumosTable({ insumos }: { insumos: Insumo[] }) {
   if (insumos.length === 0) {
     return <p className="text-sm text-muted-foreground">Todavía no hay insumos cargados.</p>;
   }
+
+  // Una consulta por insumo, todas en paralelo. No se puede resolver inline
+  // en el JSX porque estos helpers son async (ver src/db/insumos.ts).
+  const cascadePorInsumoId = new Map(
+    await Promise.all(
+      insumos.map(
+        async (insumo) =>
+          [
+            insumo.id,
+            {
+              recetasQueLoUsan: await getRecetasQueUsanInsumo(insumo.id),
+              productosQueLoUsan: await getProductosQueUsanPackaging(insumo.id),
+            },
+          ] as const,
+      ),
+    ),
+  );
 
   return (
     <div className="rounded-md border">
@@ -68,8 +85,8 @@ export function InsumosTable({ insumos }: { insumos: Insumo[] }) {
                   <DeleteInsumoButton
                     id={insumo.id}
                     nombre={insumo.nombre}
-                    recetasQueLoUsan={getRecetasQueUsanInsumo(insumo.id)}
-                    productosQueLoUsan={getProductosQueUsanPackaging(insumo.id)}
+                    recetasQueLoUsan={cascadePorInsumoId.get(insumo.id)!.recetasQueLoUsan}
+                    productosQueLoUsan={cascadePorInsumoId.get(insumo.id)!.productosQueLoUsan}
                   />
                 </div>
               </TableCell>

@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 // admins/mutaciones.
 export const dynamic = "force-dynamic";
 
-export default function AdminPage() {
-  const insumos = getInsumos();
+export default async function AdminPage() {
+  const insumos = await getInsumos();
 
   return (
     <div className="flex flex-1 flex-col gap-6">

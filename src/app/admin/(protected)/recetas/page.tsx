@@ -7,8 +7,8 @@ import { DeleteRecetaButton } from "./delete-receta-button";
 // prerenderización estática de esta página (mismo criterio que insumos).
 export const dynamic = "force-dynamic";
 
-export default function RecetasPage() {
-  const recetas = getRecetas();
+export default async function RecetasPage() {
+  const recetas = await getRecetas();
 
   return (
     <div className="flex flex-1 flex-col gap-6">

@@ -54,7 +54,7 @@ function validarUnHuevo(items: RecetaInput["insumos"]): void {
   }
 }
 
-function getInsumosDeReceta(recetaId: number): RecetaInsumoConInsumo[] {
+async function getInsumosDeReceta(recetaId: number): Promise<RecetaInsumoConInsumo[]> {
   return db
     .select({
       insumoId: recetaInsumos.insumoId,
@@ -64,65 +64,50 @@ function getInsumosDeReceta(recetaId: number): RecetaInsumoConInsumo[] {
     })
     .from(recetaInsumos)
     .innerJoin(insumos, eq(recetaInsumos.insumoId, insumos.id))
-    .where(eq(recetaInsumos.recetaId, recetaId))
-    .all();
-}
-
-function reemplazarInsumosDeReceta(recetaId: number, items: RecetaInput["insumos"]): void {
-  db.delete(recetaInsumos).where(eq(recetaInsumos.recetaId, recetaId)).run();
-
-  if (items.length === 0) {
-    return;
-  }
-
-  db.insert(recetaInsumos)
-    .values(
-      items.map((i) => ({
-        recetaId,
-        insumoId: i.insumoId,
-        cantidad: i.cantidad,
-        esHuevo: i.esHuevo,
-      })),
-    )
-    .run();
+    .where(eq(recetaInsumos.recetaId, recetaId));
 }
 
 /**
- * Crea la receta y sus receta_insumos en una única transacción (better-sqlite3
- * soporta transacciones sync). Si algo falla a mitad de camino (ej. el
- * índice único parcial de "un huevo por receta", o una FK inválida), la
- * transacción entera se revierte: no queda una receta a medio insertar.
+ * Crea la receta y sus receta_insumos en una única transacción. Si algo
+ * falla a mitad de camino (ej. el índice único parcial de "un huevo por
+ * receta", o una FK inválida), la transacción entera se revierte: no queda
+ * una receta a medio insertar.
  */
-export function crearReceta(input: RecetaInput): RecetaConInsumos {
+export async function crearReceta(input: RecetaInput): Promise<RecetaConInsumos> {
   validarUnHuevo(input.insumos);
 
-  const recetaId = db.transaction((tx) => {
-    const receta = tx
+  const recetaId = await db.transaction(async (tx) => {
+    // libSQL remoto ejecuta cada tx.execute() suelto en su propia conexión
+    // lógica: el PRAGMA del módulo (src/db/index.ts) nunca llega a esta
+    // transacción. Hay que activarlo de nuevo acá — una transacción SÍ es
+    // una única conexión lógica, así que esto alcanza para toda ella. Acá
+    // protege la FK de receta_insumos.insumo_id (evita insertar un
+    // insumoId que no existe).
+    await tx.run("PRAGMA foreign_keys = ON");
+
+    const [receta] = await tx
       .insert(recetas)
       .values({
         nombre: normalizarNombre(input.nombre),
         diametroBase: input.diametroBase,
       })
-      .returning()
-      .get();
+      .returning();
 
     if (input.insumos.length > 0) {
-      tx.insert(recetaInsumos)
-        .values(
-          input.insumos.map((i) => ({
-            recetaId: receta.id,
-            insumoId: i.insumoId,
-            cantidad: i.cantidad,
-            esHuevo: i.esHuevo,
-          })),
-        )
-        .run();
+      await tx.insert(recetaInsumos).values(
+        input.insumos.map((i) => ({
+          recetaId: receta.id,
+          insumoId: i.insumoId,
+          cantidad: i.cantidad,
+          esHuevo: i.esHuevo,
+        })),
+      );
     }
 
     return receta.id;
   });
 
-  const creada = getRecetaById(recetaId);
+  const creada = await getRecetaById(recetaId);
   if (!creada) {
     throw new Error(`No se pudo leer la receta recién creada (id ${recetaId}).`);
   }
@@ -134,40 +119,41 @@ export function crearReceta(input: RecetaInput): RecetaConInsumos {
  * receta_insumos asociadas (delete + insert). Más simple que un diff fila
  * por fila, y el volumen de insumos por receta es chico.
  */
-export function actualizarReceta(id: number, input: RecetaInput): RecetaConInsumos {
+export async function actualizarReceta(id: number, input: RecetaInput): Promise<RecetaConInsumos> {
   validarUnHuevo(input.insumos);
 
-  const existente = db.select().from(recetas).where(eq(recetas.id, id)).get();
+  const existente = await getRecetaById(id);
   if (!existente) {
     throw new Error(`No existe una receta con id ${id}.`);
   }
 
-  db.transaction((tx) => {
-    tx.update(recetas)
+  await db.transaction(async (tx) => {
+    // Ver comentario equivalente en crearReceta.
+    await tx.run("PRAGMA foreign_keys = ON");
+
+    await tx
+      .update(recetas)
       .set({
         nombre: normalizarNombre(input.nombre),
         diametroBase: input.diametroBase,
       })
-      .where(eq(recetas.id, id))
-      .run();
+      .where(eq(recetas.id, id));
 
-    tx.delete(recetaInsumos).where(eq(recetaInsumos.recetaId, id)).run();
+    await tx.delete(recetaInsumos).where(eq(recetaInsumos.recetaId, id));
 
     if (input.insumos.length > 0) {
-      tx.insert(recetaInsumos)
-        .values(
-          input.insumos.map((i) => ({
-            recetaId: id,
-            insumoId: i.insumoId,
-            cantidad: i.cantidad,
-            esHuevo: i.esHuevo,
-          })),
-        )
-        .run();
+      await tx.insert(recetaInsumos).values(
+        input.insumos.map((i) => ({
+          recetaId: id,
+          insumoId: i.insumoId,
+          cantidad: i.cantidad,
+          esHuevo: i.esHuevo,
+        })),
+      );
     }
   });
 
-  const actualizada = getRecetaById(id);
+  const actualizada = await getRecetaById(id);
   if (!actualizada) {
     throw new Error(`No se pudo leer la receta actualizada (id ${id}).`);
   }
@@ -180,18 +166,27 @@ export function actualizarReceta(id: number, input: RecetaInput): RecetaConInsum
  * DELETE falla con un error crudo de FK constraint de SQLite; se deja
  * propagar tal cual — es responsabilidad de la capa de Server Actions
  * traducirlo a un mensaje de negocio antes de mostrarlo al admin.
+ *
+ * Envuelto en una transacción SOLO para poder activar
+ * "PRAGMA foreign_keys = ON" antes del DELETE (ver comentario en
+ * crearReceta) — sin esto, en libSQL remoto el DELETE no vería la FK y
+ * borraría la receta igual aunque haya productos dependientes, dejándolos
+ * con una referencia rota en vez de bloquear el borrado.
  */
-export function eliminarReceta(id: number): void {
-  db.delete(recetas).where(eq(recetas.id, id)).run();
+export async function eliminarReceta(id: number): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.run("PRAGMA foreign_keys = ON");
+    await tx.delete(recetas).where(eq(recetas.id, id));
+  });
 }
 
-export function getRecetaById(id: number): RecetaConInsumos | undefined {
-  const receta = db.select().from(recetas).where(eq(recetas.id, id)).get();
+export async function getRecetaById(id: number): Promise<RecetaConInsumos | undefined> {
+  const [receta] = await db.select().from(recetas).where(eq(recetas.id, id));
   if (!receta) {
     return undefined;
   }
 
-  return { ...receta, insumos: getInsumosDeReceta(receta.id) };
+  return { ...receta, insumos: await getInsumosDeReceta(receta.id) };
 }
 
 /**
@@ -200,7 +195,9 @@ export function getRecetaById(id: number): RecetaConInsumos | undefined {
  * de insumos" por receta, y no vale la pena una consulta aparte para eso
  * dado el volumen chico de datos de este proyecto.
  */
-export function getRecetas(): RecetaConInsumos[] {
-  const filas = db.select().from(recetas).orderBy(recetas.nombre).all();
-  return filas.map((receta) => ({ ...receta, insumos: getInsumosDeReceta(receta.id) }));
+export async function getRecetas(): Promise<RecetaConInsumos[]> {
+  const filas = await db.select().from(recetas).orderBy(recetas.nombre);
+  return Promise.all(
+    filas.map(async (receta) => ({ ...receta, insumos: await getInsumosDeReceta(receta.id) })),
+  );
 }
