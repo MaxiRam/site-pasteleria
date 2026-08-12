@@ -16,6 +16,12 @@ export interface ProductoFormValues {
   publicado: boolean;
 }
 
+/**
+ * El packaging NO se maneja acá: es distinto por diámetro (una torta de
+ * 12cm puede llevar una caja distinta que una de 25cm), y el diámetro es
+ * un concepto de Precios, no de Productos — se edita desde
+ * /admin/precios/[id]/packaging (ver esa página y src/db/producto-insumos.ts).
+ */
 export function ProductoForm({
   action,
   recetasDisponibles,

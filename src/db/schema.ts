@@ -25,6 +25,15 @@ export type Unidad = (typeof UNIDADES)[number];
 export const DIAMETROS = [12, 18, 20, 22, 25] as const;
 export type Diametro = (typeof DIAMETROS)[number];
 
+// Tipo de insumo: 'ingrediente' entra en recetas (y se escala por diámetro);
+// 'packaging' se asigna directamente a un producto y nunca se escala (ver
+// src/db/precios.ts > calcularCostoProductoEnDiametro). Default 'ingrediente'
+// para que la migración que agrega esta columna no rompa las filas de
+// insumos ya existentes (todas eran ingredientes hasta la introducción de
+// packaging).
+export const TIPOS_INSUMO = ["ingrediente", "packaging"] as const;
+export type TipoInsumo = (typeof TIPOS_INSUMO)[number];
+
 // --- Insumos ---------------------------------------------------------------
 
 export const insumos = sqliteTable(
@@ -42,8 +51,20 @@ export const insumos = sqliteTable(
     // conversión x1000 cuando unidad = 'kg'); se persiste para no
     // recalcularlo en cada lectura.
     precioUnitarioBase: real("precio_unitario_base").notNull(),
+    tipo: text("tipo").notNull().default("ingrediente").$type<TipoInsumo>(),
   },
-  (t) => [check("insumos_unidad_check", sql`${t.unidad} in ('ml','g','kg','unidad')`)],
+  (t) => [
+    check("insumos_unidad_check", sql`${t.unidad} in ('ml','g','kg','unidad')`),
+    check("insumos_tipo_check", sql`${t.tipo} in ('ingrediente','packaging')`),
+    // Packaging solo se mide en 'unidad' (no tiene sentido "0.5g de caja").
+    // A diferencia de la regla de setPackagingDeProducto (cruza insumos +
+    // producto_insumos, dos tablas, no puede ser CHECK), esta regla vive
+    // toda en insumos — sí se puede modelar como CHECK.
+    check(
+      "insumos_packaging_unidad_check",
+      sql`${t.tipo} != 'packaging' or ${t.unidad} = 'unidad'`,
+    ),
+  ],
 );
 
 // --- Recetas ---------------------------------------------------------------
@@ -121,6 +142,41 @@ export const productos = sqliteTable("productos", {
   imagen: text("imagen"),
   publicado: integer("publicado", { mode: "boolean" }).notNull().default(false),
 });
+
+// --- Producto <-> Insumos de packaging (N:M con cantidad) ------------------
+//
+// NO confundir con receta_insumos: receta_insumos son los ingredientes de
+// una receta (se escalan por diámetro); producto_insumos es el packaging
+// asignado directamente a un producto (nunca se escala, ver
+// src/db/precios.ts > calcularCostoProductoEnDiametro).
+
+export const productoInsumos = sqliteTable(
+  "producto_insumos",
+  {
+    productoId: integer("producto_id")
+      .notNull()
+      .references(() => productos.id, { onDelete: "cascade" }),
+    insumoId: integer("insumo_id")
+      .notNull()
+      .references(() => insumos.id, { onDelete: "cascade" }),
+    // El packaging de un producto es distinto por tamaño (ej. una torta de
+    // 12cm puede llevar una caja chica, una de 25cm una caja grande +
+    // separadores) — por eso esta tabla es por producto+insumo+diámetro, no
+    // solo por producto+insumo. La cantidad en sí NUNCA se escala por la
+    // fórmula de escalado de recetas (ver calcularCostoProductoEnDiametro en
+    // src/db/precios.ts): para un diámetro dado, el packaging es
+    // exactamente la cantidad que el admin cargó para ese diámetro, punto
+    // — no hay ningún factor geométrico aplicado sobre esta cantidad.
+    diametro: integer("diametro").notNull().$type<Diametro>(),
+    // Cantidad en la unidad base del insumo (siempre 'unidad' para
+    // packaging, ver insumos_packaging_unidad_check).
+    cantidad: real("cantidad").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.productoId, t.insumoId, t.diametro] }),
+    check("producto_insumos_diametro_check", sql`${t.diametro} in (12,18,20,22,25)`),
+  ],
+);
 
 // --- Precios (por producto + diámetro) -------------------------------------
 

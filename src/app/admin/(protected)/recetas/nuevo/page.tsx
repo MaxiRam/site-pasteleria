@@ -1,11 +1,13 @@
-import { getInsumos } from "@/db";
+import { getInsumosPorTipo } from "@/db/insumos";
 import { crearRecetaAction } from "../actions";
 import { RecetaForm } from "../receta-form";
 
 export const dynamic = "force-dynamic";
 
 export default function NuevaRecetaPage() {
-  const insumosDisponibles = getInsumos();
+  // Una receta solo usa ingredientes: el packaging se asigna a nivel
+  // producto, no receta (ver proyecto.md / AGENTS.md, pedido de packaging).
+  const insumosDisponibles = getInsumosPorTipo("ingrediente");
 
   return (
     <div className="flex flex-1 flex-col gap-6">

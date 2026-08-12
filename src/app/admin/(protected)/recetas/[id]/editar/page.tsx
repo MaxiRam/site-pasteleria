@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getInsumos } from "@/db";
+import { getInsumosPorTipo } from "@/db/insumos";
 import { getRecetaById } from "@/db/recetas";
 import { actualizarRecetaAction } from "../../actions";
 import { RecetaForm } from "../../receta-form";
@@ -21,7 +21,9 @@ export default async function EditarRecetaPage({
     notFound();
   }
 
-  const insumosDisponibles = getInsumos();
+  // Una receta solo usa ingredientes: el packaging se asigna a nivel
+  // producto, no receta (ver proyecto.md / AGENTS.md, pedido de packaging).
+  const insumosDisponibles = getInsumosPorTipo("ingrediente");
   const actualizarConId = actualizarRecetaAction.bind(null, receta.id);
 
   return (

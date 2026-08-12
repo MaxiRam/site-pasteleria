@@ -14,6 +14,10 @@ export type GenerarPreciosState = { error: string } | undefined;
  * Actions son un endpoint público reachable con cualquier POST (mismo
  * criterio que insumos/actions.ts y recetas/actions.ts): no confiar en que
  * el form solo se renderiza para un admin logueado, validar siempre acá.
+ *
+ * El packaging NO se parsea acá: es por producto+diámetro (ver
+ * src/db/producto-insumos.ts), se edita desde /admin/precios/[id]/packaging
+ * (ver precios/actions.ts > actualizarPackagingAction), no desde este form.
  */
 function parseProductoInput(formData: FormData): ProductoInput | { error: string } {
   const nombrePublico = formData.get("nombrePublico");

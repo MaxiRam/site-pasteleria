@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./index";
+import { getPackagingDeProducto } from "./producto-insumos";
 import { getProductoById, type ProductoConReceta } from "./productos";
 import { getRecetaById } from "./recetas";
 import {
@@ -45,6 +46,15 @@ export interface PrecioInput {
  * resultado con `calcularCostoReceta` combinando con `precioUnitarioBase` de
  * cada insumo).
  *
+ * Al costo de ingredientes (escalado por diámetro) se le suma el costo del
+ * packaging asignado a ESTE producto+diámetro puntual (tabla
+ * producto_insumos, ver src/db/producto-insumos.ts) — el packaging puede
+ * ser distinto por tamaño (una torta de 12cm puede llevar una caja
+ * distinta que una de 25cm), pero para el diámetro que sea, esa cantidad
+ * nunca pasa por la fórmula de escalado geométrico: se costea directo con
+ * calcularCostoReceta sobre las cantidades tal cual están guardadas para
+ * ese diámetro, sin pasar por calcularCantidadesEscaladas.
+ *
  * Es el corazón de crearPrecio/actualizarPrecio: el costo se recalcula
  * siempre a partir de este helper, nunca se confía en un valor persistido
  * viejo (los precios de insumos pueden haber cambiado desde la última vez).
@@ -72,12 +82,22 @@ export function calcularCostoProductoEnDiametro(productoId: number, diametro: Di
 
   const escaladas = calcularCantidadesEscaladas(insumosBase, receta.diametroBase, diametro);
 
-  return calcularCostoReceta(
+  const costoIngredientesEscalados = calcularCostoReceta(
     escaladas.map((e) => ({
       cantidad: e.cantidad,
       precioUnitarioBase: insumoPorId.get(e.id)!.precioUnitarioBase,
     })),
   );
+
+  const packaging = getPackagingDeProducto(productoId, diametro);
+  const costoPackagingSinEscalar = calcularCostoReceta(
+    packaging.map((p) => ({
+      cantidad: p.cantidad,
+      precioUnitarioBase: p.insumo.precioUnitarioBase,
+    })),
+  );
+
+  return costoIngredientesEscalados + costoPackagingSinEscalar;
 }
 
 function getPrecioConProductoById(id: number): PrecioConProducto | undefined {

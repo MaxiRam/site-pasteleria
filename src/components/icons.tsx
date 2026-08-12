@@ -98,6 +98,26 @@ export function EyeIcon({ className }: IconProps) {
   );
 }
 
+export function PackageIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M21 8v8a2 2 0 0 1-1 1.73l-6 3.46a2 2 0 0 1-2 0l-6-3.46A2 2 0 0 1 5 16V8" />
+      <path d="M3.27 6.96 12 12l8.73-5.04" />
+      <path d="M12 22.08V12" />
+      <path d="M7.5 4.27 16.5 9.46" />
+    </svg>
+  );
+}
+
 export function SaveIcon({ className }: IconProps) {
   return (
     <svg
