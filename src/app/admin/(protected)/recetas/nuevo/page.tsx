@@ -4,10 +4,10 @@ import { RecetaForm } from "../receta-form";
 
 export const dynamic = "force-dynamic";
 
-export default function NuevaRecetaPage() {
+export default async function NuevaRecetaPage() {
   // Una receta solo usa ingredientes: el packaging se asigna a nivel
   // producto, no receta (ver proyecto.md / AGENTS.md, pedido de packaging).
-  const insumosDisponibles = getInsumosPorTipo("ingrediente");
+  const insumosDisponibles = await getInsumosPorTipo("ingrediente");
 
   return (
     <div className="flex flex-1 flex-col gap-6">

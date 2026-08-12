@@ -54,13 +54,12 @@ function normalizarDescripcion(descripcion: string | null): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function getProductoConRecetaById(id: number): ProductoConReceta | undefined {
-  const fila = db
+async function getProductoConRecetaById(id: number): Promise<ProductoConReceta | undefined> {
+  const [fila] = await db
     .select({ producto: productos, receta: recetas })
     .from(productos)
     .innerJoin(recetas, eq(productos.recetaId, recetas.id))
-    .where(eq(productos.id, id))
-    .get();
+    .where(eq(productos.id, id));
 
   if (!fila) {
     return undefined;
@@ -68,8 +67,8 @@ function getProductoConRecetaById(id: number): ProductoConReceta | undefined {
   return { ...fila.producto, receta: fila.receta };
 }
 
-export function crearProducto(input: ProductoInput): ProductoConReceta {
-  const producto = db
+export async function crearProducto(input: ProductoInput): Promise<ProductoConReceta> {
+  const [producto] = await db
     .insert(productos)
     .values({
       recetaId: input.recetaId,
@@ -77,33 +76,32 @@ export function crearProducto(input: ProductoInput): ProductoConReceta {
       descripcion: normalizarDescripcion(input.descripcion),
       publicado: input.publicado,
     })
-    .returning()
-    .get();
+    .returning();
 
-  const creado = getProductoConRecetaById(producto.id);
+  const creado = await getProductoConRecetaById(producto.id);
   if (!creado) {
     throw new Error(`No se pudo leer el producto recién creado (id ${producto.id}).`);
   }
   return creado;
 }
 
-export function actualizarProducto(id: number, input: ProductoInput): ProductoConReceta {
-  const existente = db.select().from(productos).where(eq(productos.id, id)).get();
+export async function actualizarProducto(id: number, input: ProductoInput): Promise<ProductoConReceta> {
+  const existente = await getProductoById(id);
   if (!existente) {
     throw new Error(`No existe un producto con id ${id}.`);
   }
 
-  db.update(productos)
+  await db
+    .update(productos)
     .set({
       recetaId: input.recetaId,
       nombrePublico: normalizarNombrePublico(input.nombrePublico),
       descripcion: normalizarDescripcion(input.descripcion),
       publicado: input.publicado,
     })
-    .where(eq(productos.id, id))
-    .run();
+    .where(eq(productos.id, id));
 
-  const actualizado = getProductoConRecetaById(id);
+  const actualizado = await getProductoConRecetaById(id);
   if (!actualizado) {
     throw new Error(`No se pudo leer el producto actualizado (id ${id}).`);
   }
@@ -118,23 +116,22 @@ export function actualizarProducto(id: number, input: ProductoInput): ProductoCo
  * eso va a pasar es responsabilidad de la UI (confirm() antes de enviar el
  * delete), no de esta capa.
  */
-export function eliminarProducto(id: number): void {
-  db.delete(productos).where(eq(productos.id, id)).run();
+export async function eliminarProducto(id: number): Promise<void> {
+  await db.delete(productos).where(eq(productos.id, id));
 }
 
-export function getProductoById(id: number): ProductoConReceta | undefined {
+export async function getProductoById(id: number): Promise<ProductoConReceta | undefined> {
   return getProductoConRecetaById(id);
 }
 
 /** Productos ordenados por nombre público (mismo criterio que
  * insumos/recetas), cada uno con su receta ya resuelta. */
-export function getProductos(): ProductoConReceta[] {
-  const filas = db
+export async function getProductos(): Promise<ProductoConReceta[]> {
+  const filas = await db
     .select({ producto: productos, receta: recetas })
     .from(productos)
     .innerJoin(recetas, eq(productos.recetaId, recetas.id))
-    .orderBy(productos.nombrePublico)
-    .all();
+    .orderBy(productos.nombrePublico);
 
   return filas.map((f) => ({ ...f.producto, receta: f.receta }));
 }

@@ -73,7 +73,7 @@ export async function crearInsumoAction(
     return parsed;
   }
 
-  crearInsumo(parsed);
+  await crearInsumo(parsed);
   revalidatePath("/admin/insumos");
   revalidatePath("/admin");
   // Redirige a la pestaña del tipo recién creado — si no, un insumo de
@@ -92,14 +92,14 @@ export async function actualizarInsumoAction(
     return parsed;
   }
 
-  actualizarInsumo(id, parsed);
+  await actualizarInsumo(id, parsed);
   revalidatePath("/admin/insumos");
   revalidatePath("/admin");
   redirect(`/admin/insumos?tipo=${parsed.tipo}`);
 }
 
 export async function eliminarInsumoAction(id: number): Promise<void> {
-  eliminarInsumo(id);
+  await eliminarInsumo(id);
   revalidatePath("/admin/insumos");
   revalidatePath("/admin");
 }

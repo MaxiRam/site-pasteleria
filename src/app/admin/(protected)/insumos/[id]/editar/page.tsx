@@ -15,7 +15,7 @@ export default async function EditarInsumoPage({
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const insumo = Number.isFinite(id) ? getInsumoById(id) : undefined;
+  const insumo = Number.isFinite(id) ? await getInsumoById(id) : undefined;
   if (!insumo) {
     notFound();
   }

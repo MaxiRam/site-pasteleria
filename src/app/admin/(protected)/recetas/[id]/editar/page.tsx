@@ -16,14 +16,14 @@ export default async function EditarRecetaPage({
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const receta = Number.isFinite(id) ? getRecetaById(id) : undefined;
+  const receta = Number.isFinite(id) ? await getRecetaById(id) : undefined;
   if (!receta) {
     notFound();
   }
 
   // Una receta solo usa ingredientes: el packaging se asigna a nivel
   // producto, no receta (ver proyecto.md / AGENTS.md, pedido de packaging).
-  const insumosDisponibles = getInsumosPorTipo("ingrediente");
+  const insumosDisponibles = await getInsumosPorTipo("ingrediente");
   const actualizarConId = actualizarRecetaAction.bind(null, receta.id);
 
   return (

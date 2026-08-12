@@ -12,7 +12,14 @@ Sitio con dos interfaces:
 ## Stack técnico
 
 - **Framework**: Next.js + React + TypeScript
-- **Base de datos**: SQLite
+- **Base de datos**: SQLite vía [Turso](https://turso.tech)/libSQL (`@libsql/client` +
+  `drizzle-orm/libsql`). Local: archivo plano (`file:./data/dev.db`, sin
+  `DATABASE_AUTH_TOKEN`). Producción: instancia remota Turso
+  (`libsql://<db>.turso.io` + `DATABASE_AUTH_TOKEN`) — necesario porque el
+  filesystem de Vercel es de solo lectura en runtime y no persiste entre
+  invocaciones, así que un archivo SQLite local no sirve ahí. Todo el acceso a
+  datos (`src/db/*.ts`) es async (el driver libSQL no tiene modo síncrono para
+  conexiones remotas).
 - **Auth**: email + password propio (roles: `admin`, y público sin auth)
 
 ## Roles

@@ -19,13 +19,13 @@ export default async function PackagingPrecioPage({
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const precio = Number.isFinite(id) ? getPrecioById(id) : undefined;
+  const precio = Number.isFinite(id) ? await getPrecioById(id) : undefined;
   if (!precio) {
     notFound();
   }
 
-  const packagingDisponible = getInsumosPorTipo("packaging");
-  const packagingActual = getPackagingDeProducto(precio.productoId, precio.diametro);
+  const packagingDisponible = await getInsumosPorTipo("packaging");
+  const packagingActual = await getPackagingDeProducto(precio.productoId, precio.diametro);
   const action = actualizarPackagingAction.bind(null, precio.id);
 
   return (

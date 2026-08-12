@@ -80,7 +80,7 @@ export async function actualizarPrecioAction(
   }
 
   try {
-    actualizarPrecio(id, parsed);
+    await actualizarPrecio(id, parsed);
   } catch (e) {
     return { error: traducirError(e, "No se pudo actualizar el precio.") };
   }
@@ -168,14 +168,14 @@ export async function actualizarPackagingAction(
     return parsed;
   }
 
-  const precio = getPrecioById(precioId);
+  const precio = await getPrecioById(precioId);
   if (!precio) {
     return { error: "No se pudo encontrar el precio a actualizar." };
   }
 
   try {
-    setPackagingDeProducto(precio.productoId, precio.diametro, parsed);
-    actualizarPrecio(precioId, {
+    await setPackagingDeProducto(precio.productoId, precio.diametro, parsed);
+    await actualizarPrecio(precioId, {
       margenPct: precio.margenPct,
       precioVenta: precio.precioVenta,
       confirmado: precio.confirmado,
@@ -200,7 +200,7 @@ export async function eliminarPrecioAction(
   _prevState: EliminarPrecioState,
   _formData: FormData,
 ): Promise<EliminarPrecioState> {
-  eliminarPrecio(id);
+  await eliminarPrecio(id);
   revalidatePath("/admin/precios");
   revalidatePath("/admin");
   return undefined;
