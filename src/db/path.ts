@@ -36,31 +36,39 @@ function normalizarDatabaseUrl(url: string): string {
  * pero en blanco en el dashboard de Vercel tiene que comportarse igual que
  * una que no está, no colarse como URL válida.
  */
-function envPorNombreOSufijo(nombre: string, sufijo: string): string | undefined {
+function envPorNombreOSufijo(
+  nombre: string,
+  sufijo: string,
+): { valor: string; origen: string } | undefined {
   const directo = process.env[nombre];
   if (directo) {
-    return directo;
+    return { valor: directo, origen: nombre };
   }
 
   const clave = Object.keys(process.env).find((k) => k.endsWith(sufijo) && process.env[k]);
-  return clave ? process.env[clave] : undefined;
+  return clave ? { valor: process.env[clave]!, origen: clave } : undefined;
 }
 
 const urlConfigurada = envPorNombreOSufijo("DATABASE_URL", "_TURSO_DATABASE_URL");
 
 /**
- * `true` si la URL vino de una env var real; `false` si se cayó al archivo
- * local por default. La validación de "esto no puede pasar en producción"
- * NO vive acá: este módulo se evalúa también cuando Next.js "recolecta
- * datos de página" en build (hasta para rutas force-dynamic, que nunca se
- * prerenderizan), y un throw a nivel módulo tumbaría el build entero. Se
- * valida en src/db/index.ts > getDb(), que es lazy y solo corre en una
- * request real.
+ * Nombre de la env var de la que salió DATABASE_URL, o `null` si se cayó al
+ * archivo local por default. Sirve para que el error de config diga cuál
+ * env var hay que corregir en vez de un genérico "revisá la config" — el
+ * caso real que motivó esto fue una `DATABASE_URL=./data/dev.db` vieja que
+ * quedó en el dashboard de Vercel y le ganaba a la que inyecta la
+ * integración de Turso.
+ *
+ * La validación de "esto no puede pasar en producción" NO vive acá: este
+ * módulo se evalúa también cuando Next.js "recolecta datos de página" en
+ * build (hasta para rutas force-dynamic, que nunca se prerenderizan), y un
+ * throw a nivel módulo tumbaría el build entero. Se valida en
+ * src/db/index.ts > getDb(), que es lazy y solo corre en una request real.
  */
-export const DATABASE_URL_CONFIGURADA = urlConfigurada !== undefined;
+export const DATABASE_URL_ORIGEN = urlConfigurada?.origen ?? null;
 
-export const DATABASE_URL = normalizarDatabaseUrl(urlConfigurada ?? "file:./data/dev.db");
+export const DATABASE_URL = normalizarDatabaseUrl(urlConfigurada?.valor ?? "file:./data/dev.db");
 export const DATABASE_AUTH_TOKEN = envPorNombreOSufijo(
   "DATABASE_AUTH_TOKEN",
   "_TURSO_AUTH_TOKEN",
-);
+)?.valor;
