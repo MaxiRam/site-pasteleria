@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /*
+   * La UI del admin es clara y punto (ver el comentario de abajo). Declararlo
+   * evita que un navegador en modo oscuro le aplique su propio ajuste a los
+   * controles de formulario — el autofill, el ojito de "ver contraseña", los
+   * scrollbars — y termine pintando texto claro adentro de un <input> blanco.
+   * Sin esto, arreglar los colores en CSS no alcanza: esos ajustes los mete el
+   * navegador, no la hoja de estilos.
+   */
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,12 +22,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/*
+ * Sin variante dark. El bloque `@media (prefers-color-scheme: dark)` que traía
+ * el scaffold de create-next-app cambiaba --foreground a #ededed (casi blanco),
+ * pero toda la UI del admin hardcodea fondos claros (bg-white, bg-zinc-50). En
+ * un navegador con modo oscuro el resultado era texto casi blanco sobre fondo
+ * casi blanco: se veía en el login, donde los <input> no fijaban color propio y
+ * heredaban el del body.
+ *
+ * Si en algún momento se quiere modo oscuro de verdad, hay que hacerlo con una
+ * clase `.dark` en el <html> y revisar todos los colores hardcodeados de
+ * fondo y texto, no volviendo a poner este media query.
+ */
 
 body {
   background: var(--background);
