@@ -2,6 +2,9 @@
 
 import { useActionState } from "react";
 import { loginFormAction } from "@/lib/auth/actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(
@@ -10,46 +13,25 @@ export function LoginForm() {
   );
 
   return (
-    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium text-zinc-700">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
-        />
+    <form action={formAction} className="flex w-full flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" name="email" type="email" required autoComplete="email" />
       </div>
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="password"
-          className="text-sm font-medium text-zinc-700"
-        >
-          Contraseña
-        </label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="password">Contraseña</Label>
+        <Input
           id="password"
           name="password"
           type="password"
           required
           autoComplete="current-password"
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
         />
       </div>
-      {state?.error ? (
-        <p className="text-sm text-red-600">{state.error}</p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
+      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Ingresando..." : "Ingresar"}
-      </button>
+      </Button>
     </form>
   );
 }

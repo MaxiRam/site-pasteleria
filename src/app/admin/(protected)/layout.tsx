@@ -1,12 +1,13 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { AdminSidebar } from "./admin-sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 /**
  * Layout compartido para todo /admin/* excepto /admin/login (que vive fuera
  * de este route group `(protected)` a propósito: el login tiene su propio
- * flujo standalone y no debe mostrar nav de secciones que requieren sesión).
- *
- * Nav con Insumos, Recetas, Productos, Precios y Dashboard.
+ * flujo standalone y no debe mostrar el sidebar de secciones que requieren
+ * sesión).
  */
 export default function ProtectedAdminLayout({
   children,
@@ -14,39 +15,15 @@ export default function ProtectedAdminLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white px-6 py-3">
-        <nav className="flex items-center gap-4">
-          <Link href="/admin" className="text-sm font-semibold text-zinc-900">
-            Panel de administración
-          </Link>
-          <Link
-            href="/admin/insumos"
-            className="text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            Insumos
-          </Link>
-          <Link
-            href="/admin/recetas"
-            className="text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            Recetas
-          </Link>
-          <Link
-            href="/admin/productos"
-            className="text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            Productos
-          </Link>
-          <Link
-            href="/admin/precios"
-            className="text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            Precios
-          </Link>
-        </nav>
-      </header>
-      <main className="flex flex-1 flex-col px-6 py-8">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AdminSidebar />
+      <SidebarInset>
+        <header className="flex h-12 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="h-4" />
+        </header>
+        <main className="flex flex-1 flex-col gap-6 p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
