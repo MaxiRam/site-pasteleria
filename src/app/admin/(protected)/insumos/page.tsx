@@ -33,7 +33,15 @@ export default async function InsumosPage({
   const { tipo: tipoParam } = await searchParams;
   const tipo = tipoValido(tipoParam);
 
-  const insumos = getInsumosPorTipo(tipo);
+  const insumos = await getInsumosPorTipo(tipo);
+  const cascadePorInsumo = await Promise.all(
+    insumos.map(async (insumo) => ({
+      id: insumo.id,
+      recetasQueLoUsan: await getRecetasQueUsanInsumo(insumo.id),
+      productosQueLoUsan: await getProductosQueUsanPackaging(insumo.id),
+    })),
+  );
+  const cascadePorInsumoId = new Map(cascadePorInsumo.map((c) => [c.id, c]));
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -106,8 +114,8 @@ export default async function InsumosPage({
                       <DeleteInsumoButton
                         id={insumo.id}
                         nombre={insumo.nombre}
-                        recetasQueLoUsan={getRecetasQueUsanInsumo(insumo.id)}
-                        productosQueLoUsan={getProductosQueUsanPackaging(insumo.id)}
+                        recetasQueLoUsan={cascadePorInsumoId.get(insumo.id)!.recetasQueLoUsan}
+                        productosQueLoUsan={cascadePorInsumoId.get(insumo.id)!.productosQueLoUsan}
                       />
                     </div>
                   </td>

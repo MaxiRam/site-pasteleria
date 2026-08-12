@@ -22,14 +22,14 @@ async function main() {
     process.exit(1);
   }
 
-  const existing = db.select().from(admins).where(eq(admins.email, email)).get();
+  const [existing] = await db.select().from(admins).where(eq(admins.email, email));
   if (existing) {
     console.log(`Ya existe un admin con email ${email}, no se hace nada.`);
     return;
   }
 
   const passwordHash = await hashPassword(password);
-  db.insert(admins).values({ email, passwordHash }).run();
+  await db.insert(admins).values({ email, passwordHash });
   console.log(`Admin ${email} creado.`);
 }
 

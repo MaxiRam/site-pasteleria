@@ -59,13 +59,16 @@ export interface PrecioInput {
  * siempre a partir de este helper, nunca se confía en un valor persistido
  * viejo (los precios de insumos pueden haber cambiado desde la última vez).
  */
-export function calcularCostoProductoEnDiametro(productoId: number, diametro: Diametro): number {
-  const producto = getProductoById(productoId);
+export async function calcularCostoProductoEnDiametro(
+  productoId: number,
+  diametro: Diametro,
+): Promise<number> {
+  const producto = await getProductoById(productoId);
   if (!producto) {
     throw new Error(`No existe un producto con id ${productoId}.`);
   }
 
-  const receta = getRecetaById(producto.recetaId);
+  const receta = await getRecetaById(producto.recetaId);
   if (!receta) {
     throw new Error(
       `El producto "${producto.nombrePublico}" (id ${productoId}) referencia una receta ` +
@@ -89,7 +92,7 @@ export function calcularCostoProductoEnDiametro(productoId: number, diametro: Di
     })),
   );
 
-  const packaging = getPackagingDeProducto(productoId, diametro);
+  const packaging = await getPackagingDeProducto(productoId, diametro);
   const costoPackagingSinEscalar = calcularCostoReceta(
     packaging.map((p) => ({
       cantidad: p.cantidad,
@@ -100,13 +103,13 @@ export function calcularCostoProductoEnDiametro(productoId: number, diametro: Di
   return costoIngredientesEscalados + costoPackagingSinEscalar;
 }
 
-function getPrecioConProductoById(id: number): PrecioConProducto | undefined {
-  const precio = db.select().from(precios).where(eq(precios.id, id)).get();
+async function getPrecioConProductoById(id: number): Promise<PrecioConProducto | undefined> {
+  const [precio] = await db.select().from(precios).where(eq(precios.id, id));
   if (!precio) {
     return undefined;
   }
 
-  const producto = getProductoById(precio.productoId);
+  const producto = await getProductoById(precio.productoId);
   if (!producto) {
     throw new Error(`El precio ${id} referencia un producto inexistente (id ${precio.productoId}).`);
   }
@@ -124,11 +127,11 @@ function getPrecioConProductoById(id: number): PrecioConProducto | undefined {
  * capa de Server Actions lo traduce a "Ya existe un precio para este
  * producto en este diámetro".
  */
-export function crearPrecio(input: PrecioInput): PrecioConProducto {
-  const costoCalculado = calcularCostoProductoEnDiametro(input.productoId, input.diametro);
+export async function crearPrecio(input: PrecioInput): Promise<PrecioConProducto> {
+  const costoCalculado = await calcularCostoProductoEnDiametro(input.productoId, input.diametro);
   const precioSugerido = calcularPrecioSugerido(costoCalculado, input.margenPct);
 
-  const precio = db
+  const [precio] = await db
     .insert(precios)
     .values({
       productoId: input.productoId,
@@ -139,10 +142,9 @@ export function crearPrecio(input: PrecioInput): PrecioConProducto {
       precioVenta: input.precioVenta,
       confirmado: input.confirmado,
     })
-    .returning()
-    .get();
+    .returning();
 
-  const creado = getPrecioConProductoById(precio.id);
+  const creado = await getPrecioConProductoById(precio.id);
   if (!creado) {
     throw new Error(`No se pudo leer el precio recién creado (id ${precio.id}).`);
   }
@@ -163,25 +165,28 @@ export function crearPrecio(input: PrecioInput): PrecioConProducto {
  * acción manual ("Generar precios") para productos que ya existían antes
  * de esa automatización.
  */
-export function generarPreciosParaProducto(productoId: number): PrecioConProducto[] {
-  const existentes = db
+export async function generarPreciosParaProducto(productoId: number): Promise<PrecioConProducto[]> {
+  const existentes = await db
     .select({ diametro: precios.diametro })
     .from(precios)
-    .where(eq(precios.productoId, productoId))
-    .all();
+    .where(eq(precios.productoId, productoId));
   const diametrosExistentes = new Set(existentes.map((p) => p.diametro));
 
   const faltantes = DIAMETROS.filter((d) => !diametrosExistentes.has(d));
 
-  return faltantes.map((diametro) =>
-    crearPrecio({
-      productoId,
-      diametro,
-      margenPct: MARGEN_POR_DIAMETRO[diametro],
-      precioVenta: null,
-      confirmado: false,
-    }),
-  );
+  const creados: PrecioConProducto[] = [];
+  for (const diametro of faltantes) {
+    creados.push(
+      await crearPrecio({
+        productoId,
+        diametro,
+        margenPct: MARGEN_POR_DIAMETRO[diametro],
+        precioVenta: null,
+        confirmado: false,
+      }),
+    );
+  }
+  return creados;
 }
 
 /**
@@ -191,22 +196,23 @@ export function generarPreciosParaProducto(productoId: number): PrecioConProduct
  * (los precios de insumos pueden haber cambiado desde que se creó/editó por
  * última vez este precio) y `precioSugerido` con el `margenPct` nuevo.
  */
-export function actualizarPrecio(
+export async function actualizarPrecio(
   id: number,
   input: Omit<PrecioInput, "productoId" | "diametro">,
-): PrecioConProducto {
-  const existente = db.select().from(precios).where(eq(precios.id, id)).get();
+): Promise<PrecioConProducto> {
+  const [existente] = await db.select().from(precios).where(eq(precios.id, id));
   if (!existente) {
     throw new Error(`No existe un precio con id ${id}.`);
   }
 
-  const costoCalculado = calcularCostoProductoEnDiametro(
+  const costoCalculado = await calcularCostoProductoEnDiametro(
     existente.productoId,
     existente.diametro,
   );
   const precioSugerido = calcularPrecioSugerido(costoCalculado, input.margenPct);
 
-  db.update(precios)
+  await db
+    .update(precios)
     .set({
       costoCalculado,
       margenPct: input.margenPct,
@@ -214,10 +220,9 @@ export function actualizarPrecio(
       precioVenta: input.precioVenta,
       confirmado: input.confirmado,
     })
-    .where(eq(precios.id, id))
-    .run();
+    .where(eq(precios.id, id));
 
-  const actualizado = getPrecioConProductoById(id);
+  const actualizado = await getPrecioConProductoById(id);
   if (!actualizado) {
     throw new Error(`No se pudo leer el precio actualizado (id ${id}).`);
   }
@@ -225,11 +230,11 @@ export function actualizarPrecio(
 }
 
 /** Sin cascada hacia nada: `precios` es la hoja del árbol. */
-export function eliminarPrecio(id: number): void {
-  db.delete(precios).where(eq(precios.id, id)).run();
+export async function eliminarPrecio(id: number): Promise<void> {
+  await db.delete(precios).where(eq(precios.id, id));
 }
 
-export function getPrecioById(id: number): PrecioConProducto | undefined {
+export async function getPrecioById(id: number): Promise<PrecioConProducto | undefined> {
   return getPrecioConProductoById(id);
 }
 
@@ -238,18 +243,20 @@ export function getPrecioById(id: number): PrecioConProducto | undefined {
  * admin" que getInsumos()/getRecetas()/getProductos(). El volumen de datos
  * de este proyecto es chico, así que resolver el producto de cada precio
  * con una consulta por fila (en vez de un join) no es un problema. */
-export function getPrecios(): PrecioConProducto[] {
-  const filas = db.select().from(precios).all();
+export async function getPrecios(): Promise<PrecioConProducto[]> {
+  const filas = await db.select().from(precios);
 
-  const conProducto = filas.map((precio) => {
-    const producto = getProductoById(precio.productoId);
-    if (!producto) {
-      throw new Error(
-        `El precio ${precio.id} referencia un producto inexistente (id ${precio.productoId}).`,
-      );
-    }
-    return { ...precio, producto };
-  });
+  const conProducto = await Promise.all(
+    filas.map(async (precio) => {
+      const producto = await getProductoById(precio.productoId);
+      if (!producto) {
+        throw new Error(
+          `El precio ${precio.id} referencia un producto inexistente (id ${precio.productoId}).`,
+        );
+      }
+      return { ...precio, producto };
+    }),
+  );
 
   return conProducto.sort((a, b) => {
     const porNombre = a.producto.nombrePublico.localeCompare(b.producto.nombrePublico);

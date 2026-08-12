@@ -52,8 +52,9 @@ function conPrecioUnitarioBase(input: InsumoInput) {
   };
 }
 
-export function crearInsumo(input: InsumoInput): Insumo {
-  return db.insert(insumos).values(conPrecioUnitarioBase(input)).returning().get();
+export async function crearInsumo(input: InsumoInput): Promise<Insumo> {
+  const [creado] = await db.insert(insumos).values(conPrecioUnitarioBase(input)).returning();
+  return creado;
 }
 
 /**
@@ -70,22 +71,23 @@ export function crearInsumo(input: InsumoInput): Insumo {
  * tipo mientras el insumo esté en uso (mismo espíritu que eliminarReceta
  * bloqueando por productos dependientes).
  */
-export function actualizarInsumo(id: number, input: InsumoInput): Insumo {
-  const existente = db.select().from(insumos).where(eq(insumos.id, id)).get();
+export async function actualizarInsumo(id: number, input: InsumoInput): Promise<Insumo> {
+  const existente = await getInsumoById(id);
   if (!existente) {
     throw new Error(`No existe un insumo con id ${id}.`);
   }
 
-  return db
+  const [actualizado] = await db
     .update(insumos)
     .set(conPrecioUnitarioBase(input))
     .where(eq(insumos.id, id))
-    .returning()
-    .get();
+    .returning();
+  return actualizado;
 }
 
-export function getInsumoById(id: number): Insumo | undefined {
-  return db.select().from(insumos).where(eq(insumos.id, id)).get();
+export async function getInsumoById(id: number): Promise<Insumo | undefined> {
+  const [insumo] = await db.select().from(insumos).where(eq(insumos.id, id));
+  return insumo;
 }
 
 /**
@@ -95,13 +97,8 @@ export function getInsumoById(id: number): Insumo | undefined {
  * ingredientes, el packaging de un producto solo usa insumos de tipo
  * packaging (ver proyecto.md y src/db/producto-insumos.ts).
  */
-export function getInsumosPorTipo(tipo: TipoInsumo): Insumo[] {
-  return db
-    .select()
-    .from(insumos)
-    .where(eq(insumos.tipo, tipo))
-    .orderBy(insumos.nombre)
-    .all();
+export async function getInsumosPorTipo(tipo: TipoInsumo): Promise<Insumo[]> {
+  return db.select().from(insumos).where(eq(insumos.tipo, tipo)).orderBy(insumos.nombre);
 }
 
 /**
@@ -111,14 +108,13 @@ export function getInsumosPorTipo(tipo: TipoInsumo): Insumo[] {
  * (recetaId, insumoId), así que a lo sumo una fila por receta — no hace
  * falta dedup.
  */
-export function getRecetasQueUsanInsumo(insumoId: number): string[] {
-  return db
+export async function getRecetasQueUsanInsumo(insumoId: number): Promise<string[]> {
+  const filas = await db
     .select({ nombre: recetas.nombre })
     .from(recetaInsumos)
     .innerJoin(recetas, eq(recetaInsumos.recetaId, recetas.id))
-    .where(eq(recetaInsumos.insumoId, insumoId))
-    .all()
-    .map((r) => r.nombre);
+    .where(eq(recetaInsumos.insumoId, insumoId));
+  return filas.map((r) => r.nombre);
 }
 
 /**
@@ -129,14 +125,13 @@ export function getRecetasQueUsanInsumo(insumoId: number): string[] {
  * producto_insumos es (productoId, insumoId), así que a lo sumo una fila
  * por producto — no hace falta dedup.
  */
-export function getProductosQueUsanPackaging(insumoId: number): string[] {
-  return db
+export async function getProductosQueUsanPackaging(insumoId: number): Promise<string[]> {
+  const filas = await db
     .select({ nombre: productos.nombrePublico })
     .from(productoInsumos)
     .innerJoin(productos, eq(productoInsumos.productoId, productos.id))
-    .where(eq(productoInsumos.insumoId, insumoId))
-    .all()
-    .map((r) => r.nombre);
+    .where(eq(productoInsumos.insumoId, insumoId));
+  return filas.map((r) => r.nombre);
 }
 
 /**
@@ -150,7 +145,17 @@ export function getProductosQueUsanPackaging(insumoId: number): string[] {
  * en la UI (ver insumos/page.tsx + delete-insumo-button.tsx), que usa
  * getRecetasQueUsanInsumo y getProductosQueUsanPackaging antes de mostrar
  * el confirm().
+ *
+ * Envuelto en una transacción SOLO para poder activar
+ * "PRAGMA foreign_keys = ON" antes del DELETE — en libSQL remoto cada
+ * statement suelto corre en su propia conexión lógica, así que el PRAGMA
+ * global de src/db/index.ts no le llega a este DELETE. Sin esto la cascada
+ * no se aplicaría en producción (Turso) y quedarían filas huérfanas en
+ * receta_insumos/producto_insumos.
  */
-export function eliminarInsumo(id: number): void {
-  db.delete(insumos).where(eq(insumos.id, id)).run();
+export async function eliminarInsumo(id: number): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.run("PRAGMA foreign_keys = ON");
+    await tx.delete(insumos).where(eq(insumos.id, id));
+  });
 }

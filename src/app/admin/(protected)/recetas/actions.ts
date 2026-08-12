@@ -104,7 +104,7 @@ export async function crearRecetaAction(
   }
 
   try {
-    crearReceta(parsed);
+    await crearReceta(parsed);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo crear la receta." };
   }
@@ -125,7 +125,7 @@ export async function actualizarRecetaAction(
   }
 
   try {
-    actualizarReceta(id, parsed);
+    await actualizarReceta(id, parsed);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo actualizar la receta." };
   }
@@ -156,7 +156,7 @@ export async function eliminarRecetaAction(
   _formData: FormData,
 ): Promise<EliminarRecetaState> {
   try {
-    eliminarReceta(id);
+    await eliminarReceta(id);
   } catch {
     return {
       error:

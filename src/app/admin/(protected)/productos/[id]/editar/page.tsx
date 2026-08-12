@@ -16,12 +16,12 @@ export default async function EditarProductoPage({
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const producto = Number.isFinite(id) ? getProductoById(id) : undefined;
+  const producto = Number.isFinite(id) ? await getProductoById(id) : undefined;
   if (!producto) {
     notFound();
   }
 
-  const recetasDisponibles = getRecetas();
+  const recetasDisponibles = await getRecetas();
   const actualizarConId = actualizarProductoAction.bind(null, producto.id);
 
   return (

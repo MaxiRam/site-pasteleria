@@ -26,10 +26,10 @@ export interface ProductoInsumoConInsumo {
   insumo: Insumo;
 }
 
-export function getPackagingDeProducto(
+export async function getPackagingDeProducto(
   productoId: number,
   diametro: Diametro,
-): ProductoInsumoConInsumo[] {
+): Promise<ProductoInsumoConInsumo[]> {
   return db
     .select({
       insumoId: productoInsumos.insumoId,
@@ -38,8 +38,7 @@ export function getPackagingDeProducto(
     })
     .from(productoInsumos)
     .innerJoin(insumos, eq(productoInsumos.insumoId, insumos.id))
-    .where(and(eq(productoInsumos.productoId, productoId), eq(productoInsumos.diametro, diametro)))
-    .all();
+    .where(and(eq(productoInsumos.productoId, productoId), eq(productoInsumos.diametro, diametro)));
 }
 
 /**
@@ -56,19 +55,21 @@ export function getPackagingDeProducto(
  * validarUnHuevo en recetas.ts vive en la capa de aplicación para su propia
  * regla de negocio.
  */
-export function setPackagingDeProducto(
+export async function setPackagingDeProducto(
   productoId: number,
   diametro: Diametro,
   items: { insumoId: number; cantidad: number }[],
-): void {
-  db.transaction((tx) => {
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    // Ver comentario en src/db/recetas.ts > crearReceta sobre por qué hace
+    // falta esto en cada transacción (libSQL remoto no hereda el PRAGMA del
+    // módulo). Acá es defensa en profundidad: insumoId ya se valida a mano
+    // abajo, pero protege igual la FK de producto_insumos.producto_id.
+    await tx.run("PRAGMA foreign_keys = ON");
+
     if (items.length > 0) {
       const insumoIds = items.map((i) => i.insumoId);
-      const insumosUsados = tx
-        .select()
-        .from(insumos)
-        .where(inArray(insumos.id, insumoIds))
-        .all();
+      const insumosUsados = await tx.select().from(insumos).where(inArray(insumos.id, insumoIds));
       const insumoPorId = new Map(insumosUsados.map((i) => [i.id, i]));
 
       for (const item of items) {
@@ -82,21 +83,19 @@ export function setPackagingDeProducto(
       }
     }
 
-    tx.delete(productoInsumos)
-      .where(and(eq(productoInsumos.productoId, productoId), eq(productoInsumos.diametro, diametro)))
-      .run();
+    await tx
+      .delete(productoInsumos)
+      .where(and(eq(productoInsumos.productoId, productoId), eq(productoInsumos.diametro, diametro)));
 
     if (items.length > 0) {
-      tx.insert(productoInsumos)
-        .values(
-          items.map((i) => ({
-            productoId,
-            diametro,
-            insumoId: i.insumoId,
-            cantidad: i.cantidad,
-          })),
-        )
-        .run();
+      await tx.insert(productoInsumos).values(
+        items.map((i) => ({
+          productoId,
+          diametro,
+          insumoId: i.insumoId,
+          cantidad: i.cantidad,
+        })),
+      );
     }
   });
 }

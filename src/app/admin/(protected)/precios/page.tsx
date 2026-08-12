@@ -20,8 +20,8 @@ export const dynamic = "force-dynamic";
  * recalculado en vivo (por si cambió el precio de algún insumo desde la
  * última vez) antes de decidir el margen nuevo.
  */
-export default function PreciosPage() {
-  const precios = getPrecios();
+export default async function PreciosPage() {
+  const precios = await getPrecios();
 
   return (
     <div className="flex flex-1 flex-col gap-6">

@@ -29,7 +29,7 @@ export default async function RecetaDetallePage({
   const { id: idParam } = await params;
   const id = Number(idParam);
 
-  const receta = Number.isFinite(id) ? getRecetaById(id) : undefined;
+  const receta = Number.isFinite(id) ? await getRecetaById(id) : undefined;
   if (!receta) {
     notFound();
   }
