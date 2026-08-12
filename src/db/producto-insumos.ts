@@ -61,6 +61,12 @@ export async function setPackagingDeProducto(
   items: { insumoId: number; cantidad: number }[],
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    // Ver comentario en src/db/recetas.ts > crearReceta sobre por qué hace
+    // falta esto en cada transacción (libSQL remoto no hereda el PRAGMA del
+    // módulo). Acá es defensa en profundidad: insumoId ya se valida a mano
+    // abajo, pero protege igual la FK de producto_insumos.producto_id.
+    await tx.run("PRAGMA foreign_keys = ON");
+
     if (items.length > 0) {
       const insumoIds = items.map((i) => i.insumoId);
       const insumosUsados = await tx.select().from(insumos).where(inArray(insumos.id, insumoIds));

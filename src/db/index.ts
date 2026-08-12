@@ -17,13 +17,23 @@ const client = createClient({
   authToken: DATABASE_AUTH_TOKEN,
 });
 
-// Sin await a propósito: @libsql/client serializa los statements de un mismo
-// cliente en el orden en que se llaman (misma conexión), así que este PRAGMA
-// se ejecuta antes que cualquier query posterior sin bloquear la carga del
-// módulo con un top-level await (que rompe bajo tsx/esbuild en CJS, ver
-// scripts/seed-admin.ts y scripts/_smoke-*.ts).
+// Sin await a propósito (top-level await rompe bajo tsx/esbuild en CJS, ver
+// scripts/seed-admin.ts). Esto solo sirve para DATABASE_URL local ("file:"):
+// ahí @libsql/client mantiene una sola conexión real y esto alcanza.
+//
+// NO alcanza para libSQL remoto (Turso, "libsql://"): la doc de
+// @libsql/client dice explícitamente que "every statement executed with
+// [client.execute()] runs in its own logical database connection" — un
+// PRAGMA seteado acá nunca le llega a otro execute() suelto posterior, así
+// que en producción esto es casi un no-op. Por eso cada operación que
+// depende de foreign_keys=ON (cascadas, o que un delete bloqueado por FK
+// tire error) activa el PRAGMA de nuevo dentro de su propia
+// db.transaction() — una transacción SÍ es una única conexión lógica. Ver
+// crearReceta/actualizarReceta/eliminarReceta en recetas.ts, eliminarInsumo
+// en insumos.ts, eliminarProducto en productos.ts y setPackagingDeProducto
+// en producto-insumos.ts.
 client.execute("PRAGMA foreign_keys = ON").catch((err) => {
-  console.error("No se pudo activar PRAGMA foreign_keys:", err);
+  console.error("No se pudo activar PRAGMA foreign_keys (solo relevante en local):", err);
 });
 
 export const db = drizzle(client, { schema });

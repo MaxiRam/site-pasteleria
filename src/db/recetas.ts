@@ -77,6 +77,14 @@ export async function crearReceta(input: RecetaInput): Promise<RecetaConInsumos>
   validarUnHuevo(input.insumos);
 
   const recetaId = await db.transaction(async (tx) => {
+    // libSQL remoto ejecuta cada tx.execute() suelto en su propia conexión
+    // lógica: el PRAGMA del módulo (src/db/index.ts) nunca llega a esta
+    // transacción. Hay que activarlo de nuevo acá — una transacción SÍ es
+    // una única conexión lógica, así que esto alcanza para toda ella. Acá
+    // protege la FK de receta_insumos.insumo_id (evita insertar un
+    // insumoId que no existe).
+    await tx.run("PRAGMA foreign_keys = ON");
+
     const [receta] = await tx
       .insert(recetas)
       .values({
@@ -120,6 +128,9 @@ export async function actualizarReceta(id: number, input: RecetaInput): Promise<
   }
 
   await db.transaction(async (tx) => {
+    // Ver comentario equivalente en crearReceta.
+    await tx.run("PRAGMA foreign_keys = ON");
+
     await tx
       .update(recetas)
       .set({
@@ -155,9 +166,18 @@ export async function actualizarReceta(id: number, input: RecetaInput): Promise<
  * DELETE falla con un error crudo de FK constraint de SQLite; se deja
  * propagar tal cual — es responsabilidad de la capa de Server Actions
  * traducirlo a un mensaje de negocio antes de mostrarlo al admin.
+ *
+ * Envuelto en una transacción SOLO para poder activar
+ * "PRAGMA foreign_keys = ON" antes del DELETE (ver comentario en
+ * crearReceta) — sin esto, en libSQL remoto el DELETE no vería la FK y
+ * borraría la receta igual aunque haya productos dependientes, dejándolos
+ * con una referencia rota en vez de bloquear el borrado.
  */
 export async function eliminarReceta(id: number): Promise<void> {
-  await db.delete(recetas).where(eq(recetas.id, id));
+  await db.transaction(async (tx) => {
+    await tx.run("PRAGMA foreign_keys = ON");
+    await tx.delete(recetas).where(eq(recetas.id, id));
+  });
 }
 
 export async function getRecetaById(id: number): Promise<RecetaConInsumos | undefined> {

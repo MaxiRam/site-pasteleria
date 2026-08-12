@@ -115,9 +115,18 @@ export async function actualizarProducto(id: number, input: ProductoInput): Prom
  * necesidad de manejo de error especial acá. La advertencia al admin de que
  * eso va a pasar es responsabilidad de la UI (confirm() antes de enviar el
  * delete), no de esta capa.
+ *
+ * Envuelto en una transacción SOLO para poder activar
+ * "PRAGMA foreign_keys = ON" antes del DELETE (ver comentario equivalente en
+ * eliminarInsumo, src/db/insumos.ts) — sin esto, en libSQL remoto la cascada
+ * a `precios` no se aplicaría y quedarían filas de precios huérfanas, que
+ * después hacen tirar getPrecios() (referencian un producto inexistente).
  */
 export async function eliminarProducto(id: number): Promise<void> {
-  await db.delete(productos).where(eq(productos.id, id));
+  await db.transaction(async (tx) => {
+    await tx.run("PRAGMA foreign_keys = ON");
+    await tx.delete(productos).where(eq(productos.id, id));
+  });
 }
 
 export async function getProductoById(id: number): Promise<ProductoConReceta | undefined> {

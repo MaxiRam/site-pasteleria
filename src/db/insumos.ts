@@ -145,7 +145,17 @@ export async function getProductosQueUsanPackaging(insumoId: number): Promise<st
  * en la UI (ver insumos/page.tsx + delete-insumo-button.tsx), que usa
  * getRecetasQueUsanInsumo y getProductosQueUsanPackaging antes de mostrar
  * el confirm().
+ *
+ * Envuelto en una transacción SOLO para poder activar
+ * "PRAGMA foreign_keys = ON" antes del DELETE — en libSQL remoto cada
+ * statement suelto corre en su propia conexión lógica, así que el PRAGMA
+ * global de src/db/index.ts no le llega a este DELETE. Sin esto la cascada
+ * no se aplicaría en producción (Turso) y quedarían filas huérfanas en
+ * receta_insumos/producto_insumos.
  */
 export async function eliminarInsumo(id: number): Promise<void> {
-  await db.delete(insumos).where(eq(insumos.id, id));
+  await db.transaction(async (tx) => {
+    await tx.run("PRAGMA foreign_keys = ON");
+    await tx.delete(insumos).where(eq(insumos.id, id));
+  });
 }
