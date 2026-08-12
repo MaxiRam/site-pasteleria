@@ -21,7 +21,7 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
         />
       </div>
       <div className="flex flex-col gap-1">
@@ -37,7 +37,7 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
         />
       </div>
       {state?.error ? (
