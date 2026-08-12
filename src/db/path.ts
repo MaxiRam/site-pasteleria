@@ -27,11 +27,25 @@ function normalizarDatabaseUrl(url: string): string {
 // site_pasteleria_TURSO_AUTH_TOKEN) en vez de DATABASE_URL/DATABASE_AUTH_TOKEN
 // — se usan como fallback para no tener que renombrarlas a mano en el
 // dashboard. En local (sin ninguna de las dos) cae al archivo default.
-const urlCruda =
-  process.env.DATABASE_URL ??
-  process.env.site_pasteleria_TURSO_DATABASE_URL ??
-  "file:./data/dev.db";
+const urlConfigurada = process.env.DATABASE_URL ?? process.env.site_pasteleria_TURSO_DATABASE_URL;
 
-export const DATABASE_URL = normalizarDatabaseUrl(urlCruda);
+/**
+ * Solo un warning, no un throw: este módulo se evalúa también cuando
+ * Next.js "recolecta datos de página" en build (hasta para rutas
+ * force-dynamic, que nunca se prerenderizan) — un throw acá tumbaría el
+ * build entero en Vercel aunque las env vars de Turso sí estén disponibles
+ * en runtime real y todo funcione bien ahí. Si de verdad faltan en runtime,
+ * la primera query real contra el fallback local va a fallar con su propio
+ * error, en el momento correcto (una request, no el build).
+ */
+if (!urlConfigurada && process.env.VERCEL) {
+  console.error(
+    "Falta DATABASE_URL o site_pasteleria_TURSO_DATABASE_URL en las env vars de Vercel — " +
+      "cayendo al archivo SQLite local (file:./data/dev.db), que no existe en este entorno. " +
+      "Revisá Settings > Environment Variables en el proyecto de Vercel.",
+  );
+}
+
+export const DATABASE_URL = normalizarDatabaseUrl(urlConfigurada ?? "file:./data/dev.db");
 export const DATABASE_AUTH_TOKEN =
   process.env.DATABASE_AUTH_TOKEN ?? process.env.site_pasteleria_TURSO_AUTH_TOKEN;
