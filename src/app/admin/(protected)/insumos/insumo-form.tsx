@@ -2,6 +2,16 @@
 
 import { useActionState, useState } from "react";
 import { TIPOS_INSUMO, UNIDADES, type TipoInsumo, type Unidad } from "@/db/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { InsumoFormState } from "./actions";
 
 type InsumoFormAction = (
@@ -48,7 +58,7 @@ export function InsumoForm({
 
   // Packaging solo se mide en 'unidad' (no tiene sentido "0.5g de caja",
   // ver insumos_packaging_unidad_check en schema.ts) — al elegir packaging,
-  // la unidad se fuerza a 'unidad' y el <select> solo ofrece esa opción.
+  // la unidad se fuerza a 'unidad' y el select solo ofrece esa opción.
   function handleTipoChange(nuevoTipo: TipoInsumo) {
     setTipo(nuevoTipo);
     if (nuevoTipo === "packaging") {
@@ -59,29 +69,15 @@ export function InsumoForm({
   const unidadesDisponibles = tipo === "packaging" ? (["unidad"] as const) : UNIDADES;
 
   return (
-    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="nombre" className="text-sm font-medium text-zinc-700">
-          Nombre
-        </label>
-        <input
-          id="nombre"
-          name="nombre"
-          type="text"
-          required
-          defaultValue={initialValues?.nombre}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-        />
+    <form action={formAction} className="flex w-full flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="nombre">Nombre</Label>
+        <Input id="nombre" name="nombre" type="text" required defaultValue={initialValues?.nombre} />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="cantidadComprada"
-          className="text-sm font-medium text-zinc-700"
-        >
-          Cantidad comprada
-        </label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="cantidadComprada">Cantidad comprada</Label>
+        <Input
           id="cantidadComprada"
           name="cantidadComprada"
           type="number"
@@ -89,41 +85,33 @@ export function InsumoForm({
           min="0"
           required
           defaultValue={initialValues?.cantidadComprada}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="unidad" className="text-sm font-medium text-zinc-700">
-          Unidad
-        </label>
-        <select
-          id="unidad"
-          name="unidad"
-          required
-          value={unidad}
-          onChange={(e) => setUnidad(e.target.value as Unidad)}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-        >
-          {unidadesDisponibles.map((u) => (
-            <option key={u} value={u}>
-              {u}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="unidad">Unidad</Label>
+        <Select name="unidad" value={unidad} onValueChange={(v) => setUnidad(v as Unidad)}>
+          <SelectTrigger id="unidad" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {unidadesDisponibles.map((u) => (
+              <SelectItem key={u} value={u}>
+                {u}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {tipo === "packaging" ? (
-          <p className="text-xs text-zinc-500">Packaging solo se mide en &quot;unidad&quot;.</p>
+          <p className="text-xs text-muted-foreground">
+            Packaging solo se mide en &quot;unidad&quot;.
+          </p>
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="precioCompra"
-          className="text-sm font-medium text-zinc-700"
-        >
-          Precio de compra (ARS)
-        </label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="precioCompra">Precio de compra (ARS)</Label>
+        <Input
           id="precioCompra"
           name="precioCompra"
           type="number"
@@ -131,39 +119,34 @@ export function InsumoForm({
           min="0"
           required
           defaultValue={initialValues?.precioCompra}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="tipo" className="text-sm font-medium text-zinc-700">
-          Tipo
-        </label>
-        <select
-          id="tipo"
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="tipo">Tipo</Label>
+        <Select
           name="tipo"
-          required
           value={tipo}
-          onChange={(e) => handleTipoChange(e.target.value as TipoInsumo)}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+          onValueChange={(v) => handleTipoChange(v as TipoInsumo)}
         >
-          {TIPOS_INSUMO.map((tipo) => (
-            <option key={tipo} value={tipo}>
-              {NOMBRE_TIPO[tipo]}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="tipo" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TIPOS_INSUMO.map((t) => (
+              <SelectItem key={t} value={t}>
+                {NOMBRE_TIPO[t]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending}>
         {pending ? "Guardando..." : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

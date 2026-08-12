@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getInsumoById } from "@/db/insumos";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { actualizarInsumoAction } from "../../actions";
 import { InsumoForm } from "../../insumo-form";
 
@@ -24,20 +25,25 @@ export default async function EditarInsumoPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">
-        Editar insumo: {insumo.nombre}
-      </h1>
-      <InsumoForm
-        action={actualizarConId}
-        submitLabel="Guardar cambios"
-        initialValues={{
-          nombre: insumo.nombre,
-          cantidadComprada: insumo.cantidadComprada,
-          unidad: insumo.unidad,
-          precioCompra: insumo.precioCompra,
-          tipo: insumo.tipo,
-        }}
-      />
+      <h1 className="text-2xl font-semibold">Editar insumo: {insumo.nombre}</h1>
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Datos del insumo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InsumoForm
+            action={actualizarConId}
+            submitLabel="Guardar cambios"
+            initialValues={{
+              nombre: insumo.nombre,
+              cantidadComprada: insumo.cantidadComprada,
+              unidad: insumo.unidad,
+              precioCompra: insumo.precioCompra,
+              tipo: insumo.tipo,
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

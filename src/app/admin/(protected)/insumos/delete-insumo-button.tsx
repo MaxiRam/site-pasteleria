@@ -1,20 +1,29 @@
 "use client";
 
-import { TrashIcon } from "@/components/icons";
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { eliminarInsumoAction } from "./actions";
 
 /**
- * Confirmación mínima en el cliente (`confirm()`) antes de borrar — no hace
- * falta un modal elaborado para un panel de un solo admin.
+ * AlertDialog en vez de `window.confirm()` — modal real, mismo criterio de
+ * advertencia que antes (recetas y/o productos afectados por el cascade de
+ * borrado, ver src/db/insumos.ts > eliminarInsumo).
  *
- * `receta_insumos.insumo_id` y `producto_insumos.insumo_id` tienen onDelete
- * cascade (ver src/db/schema.ts): borrar un insumo en uso lo saca en
- * cascada de esas recetas y/o productos sin avisar en la DB.
- * `recetasQueLoUsan` (resuelto en insumos/page.tsx con
- * getRecetasQueUsanInsumo) y `productosQueLoUsan` (con
- * getProductosQueUsanPackaging) permiten advertirlo acá en un solo mensaje,
- * mismo criterio que DeleteRecetaButton/DeleteProductoButton con sus propios
- * cascades.
+ * `eliminarInsumoAction` no tiene estado de error (siempre borra o tira), así
+ * que cerramos el diálogo optimistamente al click — la lista se actualiza
+ * un instante después vía revalidatePath.
  */
 export function DeleteInsumoButton({
   id,
@@ -27,6 +36,7 @@ export function DeleteInsumoButton({
   recetasQueLoUsan: string[];
   productosQueLoUsan: string[];
 }) {
+  const [open, setOpen] = useState(false);
   const action = eliminarInsumoAction.bind(null, id);
 
   const partesCascade: string[] = [];
@@ -44,26 +54,30 @@ export function DeleteInsumoButton({
     partesCascade.length > 0 ? ` Se va a quitar de ${partesCascade.join(" y de ")}.` : "";
 
   return (
-    <form
-      action={action}
-      onSubmit={(event) => {
-        if (
-          !window.confirm(
-            `¿Eliminar el insumo "${nombre}"? Esta acción no se puede deshacer.${advertenciaCascade}`,
-          )
-        ) {
-          event.preventDefault();
-        }
-      }}
-    >
-      <button
-        type="submit"
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={<Button variant="ghost" size="icon-sm" />}
         aria-label="Eliminar"
         title="Eliminar"
-        className="rounded border border-zinc-300 p-1.5 text-red-600 hover:bg-red-50"
       >
-        <TrashIcon className="h-4 w-4" />
-      </button>
-    </form>
+        <Trash2 className="text-destructive" />
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar el insumo &quot;{nombre}&quot;?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer.{advertenciaCascade}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <form action={action}>
+            <AlertDialogAction type="submit" variant="destructive" onClick={() => setOpen(false)}>
+              Eliminar
+            </AlertDialogAction>
+          </form>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
