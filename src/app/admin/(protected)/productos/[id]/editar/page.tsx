@@ -26,9 +26,7 @@ export default async function EditarProductoPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">
-        Editar producto: {producto.nombrePublico}
-      </h1>
+      <h1 className="text-2xl font-semibold">Editar producto: {producto.nombrePublico}</h1>
       <ProductoForm
         action={actualizarConId}
         recetasDisponibles={recetasDisponibles}

@@ -28,9 +28,7 @@ export default async function EditarRecetaPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">
-        Editar receta: {receta.nombre}
-      </h1>
+      <h1 className="text-2xl font-semibold">Editar receta: {receta.nombre}</h1>
       <RecetaForm
         action={actualizarConId}
         insumosDisponibles={insumosDisponibles}

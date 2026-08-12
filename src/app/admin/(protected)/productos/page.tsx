@@ -1,6 +1,16 @@
 import Link from "next/link";
+import { Eye, Pencil } from "lucide-react";
 import { getProductos } from "@/db/productos";
-import { EyeIcon, PencilIcon } from "@/components/icons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DeleteProductoButton } from "./delete-producto-button";
 import { GenerarPreciosButton } from "./generar-precios-button";
 
@@ -15,78 +25,73 @@ export default async function ProductosPage() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900">Productos</h1>
-        <Link
-          href="/admin/productos/nuevo"
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
-        >
+        <h1 className="text-2xl font-semibold">Productos</h1>
+        <Button render={<Link href="/admin/productos/nuevo" />} nativeButton={false}>
           Nuevo producto
-        </Link>
+        </Button>
       </div>
 
       {productos.length === 0 ? (
-        <p className="text-sm text-zinc-600">Todavía no hay productos cargados.</p>
+        <p className="text-sm text-muted-foreground">Todavía no hay productos cargados.</p>
       ) : (
-        <div className="overflow-x-auto rounded border border-zinc-200 bg-white">
-          <table className="w-full min-w-max text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
-              <tr>
-                <th className="px-4 py-2 font-medium">Imagen</th>
-                <th className="px-4 py-2 font-medium">Nombre público</th>
-                <th className="px-4 py-2 font-medium">Receta</th>
-                <th className="px-4 py-2 font-medium">Publicado</th>
-                <th className="px-4 py-2 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Imagen</TableHead>
+                <TableHead>Nombre público</TableHead>
+                <TableHead>Receta</TableHead>
+                <TableHead>Publicado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {productos.map((producto) => (
-                <tr key={producto.id} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-2">
+                <TableRow key={producto.id}>
+                  <TableCell>
                     {/* Sin upload de imágenes todavía (ver proyecto.md,
                     sección "Imágenes y moneda"): placeholder visual fijo. */}
-                    <div className="flex h-10 w-10 items-center justify-center rounded bg-zinc-100 text-[10px] text-zinc-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded bg-muted text-[10px] text-muted-foreground">
                       Sin imagen
                     </div>
-                  </td>
-                  <td className="px-4 py-2 text-zinc-900">{producto.nombrePublico}</td>
-                  <td className="px-4 py-2 text-zinc-700">{producto.receta.nombre}</td>
-                  <td className="px-4 py-2">
-                    <span
-                      className={
-                        producto.publicado
-                          ? "rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
-                          : "rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600"
-                      }
-                    >
+                  </TableCell>
+                  <TableCell className="font-medium">{producto.nombrePublico}</TableCell>
+                  <TableCell className="text-muted-foreground">{producto.receta.nombre}</TableCell>
+                  <TableCell>
+                    <Badge variant={producto.publicado ? "default" : "secondary"}>
                       {producto.publicado ? "Sí" : "No"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href={`/admin/productos/${producto.id}/editar`}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        render={<Link href={`/admin/productos/${producto.id}/editar`} />}
+                        nativeButton={false}
                         aria-label="Editar"
                         title="Editar"
-                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        <PencilIcon className="h-4 w-4" />
-                      </Link>
-                      <Link
-                        href="/admin/precios"
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        render={<Link href="/admin/precios" />}
+                        nativeButton={false}
                         aria-label="Ver precios"
                         title="Ver precios"
-                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        <EyeIcon className="h-4 w-4" />
-                      </Link>
+                        <Eye />
+                      </Button>
                       <GenerarPreciosButton id={producto.id} />
                       <DeleteProductoButton id={producto.id} nombre={producto.nombrePublico} />
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

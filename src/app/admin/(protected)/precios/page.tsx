@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { getPrecios } from "@/db/precios";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PrecioRow } from "./precio-row";
 
 // Lista debe reflejar altas/bajas/ediciones inmediatamente: no cachear la
@@ -25,9 +32,9 @@ export default async function PreciosPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">Precios</h1>
+      <h1 className="text-2xl font-semibold">Precios</h1>
 
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-muted-foreground">
         Los precios se generan automáticamente (los 5 diámetros) al crear un producto en{" "}
         <Link href="/admin/productos" className="underline">
           Productos
@@ -35,14 +42,14 @@ export default async function PreciosPage() {
         . Margen, precio de venta y confirmado se editan directo en la fila.
       </p>
 
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-muted-foreground">
         Regla de visibilidad pública: un producto+diámetro solo aparece en el catálogo del
-        cliente si el producto está publicado <span className="font-medium">y</span> este
-        precio está confirmado.
+        cliente si el producto está publicado <span className="font-medium text-foreground">y</span>{" "}
+        este precio está confirmado.
       </p>
 
       {precios.length === 0 ? (
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           Todavía no hay precios cargados — creá un producto en{" "}
           <Link href="/admin/productos" className="underline">
             Productos
@@ -50,26 +57,26 @@ export default async function PreciosPage() {
           para generarlos automáticamente.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded border border-zinc-200 bg-white">
-          <table className="w-full min-w-max text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
-              <tr>
-                <th className="px-4 py-2 font-medium">Producto</th>
-                <th className="px-4 py-2 font-medium">Diámetro</th>
-                <th className="px-4 py-2 font-medium">Costo calculado</th>
-                <th className="px-4 py-2 font-medium">Margen</th>
-                <th className="px-4 py-2 font-medium">Precio sugerido</th>
-                <th className="px-4 py-2 font-medium">Precio de venta</th>
-                <th className="px-4 py-2 font-medium">Confirmado</th>
-                <th className="px-4 py-2 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Producto</TableHead>
+                <TableHead>Diámetro</TableHead>
+                <TableHead>Costo calculado</TableHead>
+                <TableHead>Margen</TableHead>
+                <TableHead>Precio sugerido</TableHead>
+                <TableHead>Precio de venta</TableHead>
+                <TableHead>Confirmado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {precios.map((precio) => (
                 <PrecioRow key={precio.id} precio={precio} />
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

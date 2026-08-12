@@ -11,7 +11,7 @@ export default async function NuevaRecetaPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">Nueva receta</h1>
+      <h1 className="text-2xl font-semibold">Nueva receta</h1>
       <RecetaForm
         action={crearRecetaAction}
         insumosDisponibles={insumosDisponibles}

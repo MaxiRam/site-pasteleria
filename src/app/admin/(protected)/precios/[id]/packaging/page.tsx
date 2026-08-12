@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getInsumosPorTipo } from "@/db/insumos";
 import { getPackagingDeProducto } from "@/db/producto-insumos";
 import { getPrecioById } from "@/db/precios";
+import { Button } from "@/components/ui/button";
 import { actualizarPackagingAction } from "../../actions";
 import { PackagingForm } from "../../packaging-form";
 
@@ -31,15 +32,15 @@ export default async function PackagingPrecioPage({
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="text-2xl font-semibold">
           Packaging: {precio.producto.nombrePublico} — {precio.diametro}cm
         </h1>
-        <Link href="/admin/precios" className="text-sm text-zinc-700 hover:underline">
+        <Button variant="ghost" render={<Link href="/admin/precios" />} nativeButton={false}>
           Volver
-        </Link>
+        </Button>
       </div>
 
-      <p className="text-sm text-zinc-600">
+      <p className="text-sm text-muted-foreground">
         Este packaging es solo para el diámetro {precio.diametro}cm de este producto — los demás
         diámetros tienen su propio packaging, independiente de este.
       </p>

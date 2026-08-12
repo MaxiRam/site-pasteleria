@@ -1,6 +1,15 @@
 import Link from "next/link";
+import { Eye, Pencil } from "lucide-react";
 import { getRecetas } from "@/db/recetas";
-import { EyeIcon, PencilIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DeleteRecetaButton } from "./delete-receta-button";
 
 // Lista debe reflejar altas/bajas/ediciones inmediatamente: no cachear la
@@ -13,59 +22,60 @@ export default async function RecetasPage() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900">Recetas</h1>
-        <Link
-          href="/admin/recetas/nuevo"
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
-        >
+        <h1 className="text-2xl font-semibold">Recetas</h1>
+        <Button render={<Link href="/admin/recetas/nuevo" />} nativeButton={false}>
           Nueva receta
-        </Link>
+        </Button>
       </div>
 
       {recetas.length === 0 ? (
-        <p className="text-sm text-zinc-600">Todavía no hay recetas cargadas.</p>
+        <p className="text-sm text-muted-foreground">Todavía no hay recetas cargadas.</p>
       ) : (
-        <div className="overflow-x-auto rounded border border-zinc-200 bg-white">
-          <table className="w-full min-w-max text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
-              <tr>
-                <th className="px-4 py-2 font-medium">Nombre</th>
-                <th className="px-4 py-2 font-medium">Diámetro base</th>
-                <th className="px-4 py-2 font-medium">Insumos</th>
-                <th className="px-4 py-2 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Diámetro base</TableHead>
+                <TableHead>Insumos</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {recetas.map((receta) => (
-                <tr key={receta.id} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-2 text-zinc-900">{receta.nombre}</td>
-                  <td className="px-4 py-2 text-zinc-700">{receta.diametroBase}cm</td>
-                  <td className="px-4 py-2 text-zinc-700">{receta.insumos.length}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href={`/admin/recetas/${receta.id}`}
+                <TableRow key={receta.id}>
+                  <TableCell className="font-medium">{receta.nombre}</TableCell>
+                  <TableCell>{receta.diametroBase}cm</TableCell>
+                  <TableCell>{receta.insumos.length}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        render={<Link href={`/admin/recetas/${receta.id}`} />}
+                        nativeButton={false}
                         aria-label="Ver"
                         title="Ver"
-                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        <EyeIcon className="h-4 w-4" />
-                      </Link>
-                      <Link
-                        href={`/admin/recetas/${receta.id}/editar`}
+                        <Eye />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        render={<Link href={`/admin/recetas/${receta.id}/editar`} />}
+                        nativeButton={false}
                         aria-label="Editar"
                         title="Editar"
-                        className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
                       >
-                        <PencilIcon className="h-4 w-4" />
-                      </Link>
+                        <Pencil />
+                      </Button>
                       <DeleteRecetaButton id={receta.id} nombre={receta.nombre} />
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRecetaById } from "@/db/recetas";
 import { DIAMETROS } from "@/db/schema";
 import { calcularCantidadesEscaladas, calcularCostoReceta } from "@/lib/calc";
+import { Button } from "@/components/ui/button";
 import { EscaladoTabs, type EscaladoPorDiametro } from "../escalado-tabs";
 
 // El detalle depende del :id de la URL — nunca debe servirse desde una
@@ -75,22 +76,23 @@ export default async function RecetaDetallePage({
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-zinc-900">{receta.nombre}</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/admin/recetas/${receta.id}/editar`}
-            className="text-sm text-zinc-700 hover:underline"
+        <h1 className="text-2xl font-semibold">{receta.nombre}</h1>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            render={<Link href={`/admin/recetas/${receta.id}/editar`} />}
+            nativeButton={false}
           >
             Editar
-          </Link>
-          <Link href="/admin/recetas" className="text-sm text-zinc-700 hover:underline">
+          </Button>
+          <Button variant="ghost" render={<Link href="/admin/recetas" />} nativeButton={false}>
             Volver
-          </Link>
+          </Button>
         </div>
       </div>
 
-      <p className="text-sm text-zinc-600">
-        Diámetro base cargado: <span className="font-medium">{receta.diametroBase}cm</span>
+      <p className="text-sm text-muted-foreground">
+        Diámetro base cargado: <span className="font-medium text-foreground">{receta.diametroBase}cm</span>
       </p>
 
       <EscaladoTabs porDiametro={porDiametro} diametroBase={receta.diametroBase} />

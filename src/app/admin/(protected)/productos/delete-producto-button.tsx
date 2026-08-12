@@ -1,49 +1,59 @@
 "use client";
 
-import { useActionState } from "react";
-import { TrashIcon } from "@/components/icons";
+import { useActionState, useState } from "react";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { eliminarProductoAction, type EliminarProductoState } from "./actions";
 
 /**
- * Mismo patrón de confirmación mínima (`confirm()`) que
- * insumos/delete-insumo-button.tsx y recetas/delete-receta-button.tsx, pero
- * el mensaje advierte explícitamente que se borran en cascada los precios
- * asociados (ver comentario en db/productos.ts sobre `precios.productoId`
- * onDelete cascade) — a diferencia de recetas, este delete nunca falla, así
- * que la única oportunidad de avisar al admin del impacto es este confirm().
+ * AlertDialog en vez de `window.confirm()`, mismo criterio que
+ * insumos/delete-insumo-button.tsx. El mensaje advierte explícitamente que
+ * se borran en cascada los precios asociados (ver comentario en
+ * db/productos.ts sobre `precios.productoId` onDelete cascade) — este
+ * delete nunca falla, así que se cierra optimistamente al click.
  */
 export function DeleteProductoButton({ id, nombre }: { id: number; nombre: string }) {
+  const [open, setOpen] = useState(false);
   const action = eliminarProductoAction.bind(null, id);
-  const [state, formAction, pending] = useActionState<EliminarProductoState, FormData>(
-    action,
-    undefined,
-  );
+  const [, formAction] = useActionState<EliminarProductoState, FormData>(action, undefined);
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (
-          !window.confirm(
-            `¿Eliminar el producto "${nombre}"? Esta acción no se puede deshacer y también ` +
-              "borra los precios cargados para este producto (por cada diámetro).",
-          )
-        ) {
-          event.preventDefault();
-        }
-      }}
-      className="flex items-center gap-2"
-    >
-      <button
-        type="submit"
-        disabled={pending}
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={<Button variant="ghost" size="icon-sm" />}
         aria-label="Eliminar"
         title="Eliminar"
-        className="rounded border border-zinc-300 p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
-        <TrashIcon className="h-4 w-4" />
-      </button>
-      {state?.error ? <span className="text-xs text-red-600">{state.error}</span> : null}
-    </form>
+        <Trash2 className="text-destructive" />
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar el producto &quot;{nombre}&quot;?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer y también borra los precios cargados para este
+            producto (por cada diámetro).
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <form action={formAction}>
+            <AlertDialogAction type="submit" variant="destructive" onClick={() => setOpen(false)}>
+              Eliminar
+            </AlertDialogAction>
+          </form>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

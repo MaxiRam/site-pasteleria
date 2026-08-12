@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
 import { generarPreciosAction, type GenerarPreciosState } from "./actions";
 
 /**
@@ -18,14 +19,10 @@ export function GenerarPreciosButton({ id }: { id: number }) {
 
   return (
     <form action={formAction} className="flex items-center gap-2">
-      <button
-        type="submit"
-        disabled={pending}
-        className="text-sm text-zinc-700 hover:underline disabled:opacity-50"
-      >
+      <Button type="submit" variant="link" size="sm" disabled={pending}>
         Generar precios
-      </button>
-      {state?.error ? <span className="text-xs text-red-600">{state.error}</span> : null}
+      </Button>
+      {state?.error ? <span className="text-xs text-destructive">{state.error}</span> : null}
     </form>
   );
 }
