@@ -22,5 +22,16 @@ function normalizarDatabaseUrl(url: string): string {
   return `file:${url}`;
 }
 
-export const DATABASE_URL = normalizarDatabaseUrl(process.env.DATABASE_URL ?? "file:./data/dev.db");
-export const DATABASE_AUTH_TOKEN = process.env.DATABASE_AUTH_TOKEN;
+// La integración de Turso de Vercel inyecta las env vars con el nombre del
+// proyecto como prefijo (site_pasteleria_TURSO_DATABASE_URL /
+// site_pasteleria_TURSO_AUTH_TOKEN) en vez de DATABASE_URL/DATABASE_AUTH_TOKEN
+// — se usan como fallback para no tener que renombrarlas a mano en el
+// dashboard. En local (sin ninguna de las dos) cae al archivo default.
+const urlCruda =
+  process.env.DATABASE_URL ??
+  process.env.site_pasteleria_TURSO_DATABASE_URL ??
+  "file:./data/dev.db";
+
+export const DATABASE_URL = normalizarDatabaseUrl(urlCruda);
+export const DATABASE_AUTH_TOKEN =
+  process.env.DATABASE_AUTH_TOKEN ?? process.env.site_pasteleria_TURSO_AUTH_TOKEN;
