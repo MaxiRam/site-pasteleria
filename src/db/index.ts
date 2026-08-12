@@ -2,7 +2,7 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { DATABASE_AUTH_TOKEN, DATABASE_URL, DATABASE_URL_CONFIGURADA } from "./path";
+import { DATABASE_AUTH_TOKEN, DATABASE_URL, DATABASE_URL_ORIGEN } from "./path";
 import * as schema from "./schema";
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -27,25 +27,41 @@ function getDb(): Db {
     return dbInstance;
   }
 
+  const esArchivoLocal = DATABASE_URL.startsWith("file:");
+
   // Fail-fast con mensaje claro. Acá sí se puede tirar: getDb() es lazy, así
   // que esto solo corre en una request real, nunca durante el build (ver
-  // comentario de arriba). Sin esto, una env var faltante o vacía cae al
-  // archivo local, que en Vercel no existe, y el síntoma es un "Failed
-  // query" opaco en cada request en vez del problema real de config.
-  if (!DATABASE_URL_CONFIGURADA && process.env.VERCEL) {
+  // comentario de arriba).
+  //
+  // Una DB en archivo local nunca sirve en Vercel: el filesystem es de solo
+  // lectura y no persiste entre invocaciones. Se chequea la URL resuelta, no
+  // solo si la env var falta, porque el caso real que rompió producción fue
+  // una `DATABASE_URL=./data/dev.db` vieja que quedó en el dashboard y le
+  // ganaba a la que inyecta la integración de Turso — la env var estaba, con
+  // el valor equivocado, así que un chequeo de "¿está definida?" no lo veía.
+  if (esArchivoLocal && process.env.VERCEL) {
+    const origen =
+      DATABASE_URL_ORIGEN === null
+        ? "no hay ninguna env var de base de datos definida, así que se usó el default local"
+        : `viene de la env var ${DATABASE_URL_ORIGEN}`;
     throw new Error(
-      "Falta la URL de la base de datos: definí DATABASE_URL (o dejá que la integración " +
-        "de Turso inyecte <proyecto>_TURSO_DATABASE_URL) en Settings > Environment " +
-        "Variables del proyecto de Vercel. Ojo que una env var definida pero vacía " +
-        "cuenta como faltante. Sin eso la app cae a un archivo SQLite local " +
-        "(file:./data/dev.db) que no existe en este entorno.",
+      `La base de datos apunta a un archivo local (${DATABASE_URL}) — ${origen}. ` +
+        "En Vercel el filesystem es de solo lectura y no persiste, así que hace falta " +
+        "una URL remota de Turso (libsql://<db>.turso.io). En Settings > Environment " +
+        "Variables del proyecto: borrá cualquier DATABASE_URL que apunte a un archivo " +
+        "(le gana a la que inyecta la integración de Turso) y asegurate de que la " +
+        "integración esté conectada a este environment. Ojo que una env var definida " +
+        "pero vacía cuenta como faltante.",
     );
   }
 
-  if (DATABASE_URL.startsWith("file:")) {
+  if (esArchivoLocal) {
     try {
       mkdirSync(dirname(DATABASE_URL.slice("file:".length)), { recursive: true });
     } catch (err) {
+      // Fuera de Vercel esto puede ser recuperable (ej. el archivo ya existe
+      // y solo falla el mkdir del padre), así que se loguea y se sigue: si
+      // de verdad no se puede abrir, createClient tira abajo con su error.
       console.error("No se pudo crear el directorio de la DB local:", err);
     }
   }
