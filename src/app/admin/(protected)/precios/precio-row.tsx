@@ -111,7 +111,12 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
         </div>
       </TableCell>
       <TableCell>
-        <Switch form={formId} name="confirmado" defaultChecked={precio.confirmado} />
+        <Switch
+          form={formId}
+          name="confirmado"
+          defaultChecked={precio.confirmado}
+          aria-label="Confirmado"
+        />
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
