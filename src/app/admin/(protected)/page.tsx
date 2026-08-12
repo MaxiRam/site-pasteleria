@@ -24,7 +24,13 @@ export default function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button render={<Link href="/admin/insumos" />}>Ver insumos</Button>
+          {/* nativeButton={false}: Button (Base UI) espera renderizar un
+          <button> real por defecto; al usarlo como <Link> (un <a>) hay que
+          avisarle explícitamente o tira un warning en consola. Mismo
+          criterio en cualquier otro Button usado como link. */}
+          <Button render={<Link href="/admin/insumos" />} nativeButton={false}>
+            Ver insumos
+          </Button>
         </CardContent>
       </Card>
     </div>
