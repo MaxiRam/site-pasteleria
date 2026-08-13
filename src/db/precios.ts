@@ -229,6 +229,38 @@ export async function actualizarPrecio(
   return actualizado;
 }
 
+/**
+ * Recalcula `costoCalculado`/`precioSugerido` de TODOS los precios
+ * existentes, manteniendo el margen/precioVenta/confirmado de cada uno tal
+ * cual — mismo criterio que `actualizarPackagingAction` (precios/actions.ts):
+ * reusa `actualizarPrecio` entero en vez de duplicar el cálculo de costo.
+ *
+ * Sirve para cuando cambió el precio de compra de uno o más insumos: el
+ * costo de cada precio recién se refleja al guardar esa fila individualmente
+ * (ver comentario en `actualizarPrecio`), así que sin esto un cambio de
+ * precio de insumo puede dejar decenas de filas con un costo desactualizado
+ * hasta que el admin las guarde una por una.
+ *
+ * Secuencial (no `Promise.all`) a propósito: mismo criterio que
+ * `generarPreciosParaProducto`, evita escrituras concurrentes contra la
+ * misma tabla.
+ */
+export async function recalcularTodosLosPrecios(): Promise<PrecioConProducto[]> {
+  const filas = await db.select().from(precios);
+
+  const actualizados: PrecioConProducto[] = [];
+  for (const precio of filas) {
+    actualizados.push(
+      await actualizarPrecio(precio.id, {
+        margenPct: precio.margenPct,
+        precioVenta: precio.precioVenta,
+        confirmado: precio.confirmado,
+      }),
+    );
+  }
+  return actualizados;
+}
+
 /** Sin cascada hacia nada: `precios` es la hoja del árbol. */
 export async function eliminarPrecio(id: number): Promise<void> {
   await db.delete(precios).where(eq(precios.id, id));
