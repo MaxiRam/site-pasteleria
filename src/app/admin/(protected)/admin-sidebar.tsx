@@ -46,7 +46,7 @@ export function AdminSidebar() {
             <SidebarMenu>
               {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
                 // Insumos/Recetas/Productos/Precios tienen sub-rutas
-                // (/admin/insumos/nuevo, /admin/recetas/[id], etc.) que
+                // (/admin/insumos/[id]/editar, /admin/recetas/[id], etc.) que
                 // también deben marcar la sección como activa — pero
                 // "/admin" (Dashboard) no debe quedar activo para todas
                 // las sub-rutas, solo para el path exacto.

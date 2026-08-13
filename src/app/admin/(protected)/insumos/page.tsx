@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { getInsumosPorTipo } from "@/db/insumos";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InsumosTable } from "./insumos-table";
 
@@ -14,6 +12,9 @@ export const dynamic = "force-dynamic";
  * cambiar de pestaña no dispara ningún request nuevo. Antes esto era
  * ?tipo= como query param con navegación de página completa por cada
  * cambio de pestaña.
+ *
+ * Alta de insumos: fila inline dentro de cada tabla (ver
+ * insumos-table.tsx > NuevoInsumoRow), no una página aparte.
  */
 export default async function InsumosPage() {
   const [ingredientes, packaging] = await Promise.all([
@@ -32,21 +33,11 @@ export default async function InsumosPage() {
         </TabsList>
 
         <TabsContent value="ingrediente" className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <Button render={<Link href="/admin/insumos/nuevo?tipo=ingrediente" />} nativeButton={false}>
-              Nuevo ingrediente
-            </Button>
-          </div>
-          <InsumosTable insumos={ingredientes} />
+          <InsumosTable insumos={ingredientes} tipo="ingrediente" />
         </TabsContent>
 
         <TabsContent value="packaging" className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <Button render={<Link href="/admin/insumos/nuevo?tipo=packaging" />} nativeButton={false}>
-              Nuevo packaging
-            </Button>
-          </div>
-          <InsumosTable insumos={packaging} />
+          <InsumosTable insumos={packaging} tipo="packaging" />
         </TabsContent>
       </Tabs>
     </div>

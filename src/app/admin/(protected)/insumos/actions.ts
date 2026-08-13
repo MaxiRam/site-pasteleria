@@ -12,6 +12,13 @@ import { TIPOS_INSUMO, UNIDADES, type TipoInsumo, type Unidad } from "@/db/schem
 
 export type InsumoFormState = { error: string } | undefined;
 
+// A diferencia de InsumoFormState (actualizarInsumoAction, que redirige tras
+// guardar), crearInsumoAction se invoca desde una fila inline de la tabla
+// (ver nuevo-insumo-row.tsx) que se queda en la misma página — necesita
+// distinguir "éxito" de "todavía no se envió nada" para saber cuándo cerrar
+// la fila y limpiar los campos.
+export type CrearInsumoState = { error: string } | { ok: true } | undefined;
+
 /**
  * Valida y normaliza el FormData del form de insumo (nuevo/editar). Server
  * Actions son un endpoint público reachable con cualquier POST (ver docs de
@@ -65,9 +72,9 @@ function parseInsumoInput(formData: FormData): InsumoInput | { error: string } {
 }
 
 export async function crearInsumoAction(
-  _prevState: InsumoFormState,
+  _prevState: CrearInsumoState,
   formData: FormData,
-): Promise<InsumoFormState> {
+): Promise<CrearInsumoState> {
   const parsed = parseInsumoInput(formData);
   if ("error" in parsed) {
     return parsed;
@@ -76,10 +83,7 @@ export async function crearInsumoAction(
   await crearInsumo(parsed);
   revalidatePath("/admin/insumos");
   revalidatePath("/admin");
-  // Redirige a la pestaña del tipo recién creado — si no, un insumo de
-  // packaging desaparece de la vista (la pestaña default es "ingrediente")
-  // y parece que la creación falló en silencio.
-  redirect(`/admin/insumos?tipo=${parsed.tipo}`);
+  return { ok: true };
 }
 
 export async function actualizarInsumoAction(

@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
-import { getProductosQueUsanPackaging, getRecetasQueUsanInsumo, type Insumo } from "@/db/insumos";
+import {
+  getProductosQueUsanPackaging,
+  getRecetasQueUsanInsumo,
+  type Insumo,
+} from "@/db/insumos";
+import type { TipoInsumo } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { formatARS } from "@/lib/format";
 import { DeleteInsumoButton } from "./delete-insumo-button";
+import { NuevoInsumoRow } from "./nuevo-insumo-row";
 
 const UNIDAD_BASE: Record<string, string> = {
   ml: "ml",
@@ -20,16 +26,21 @@ const UNIDAD_BASE: Record<string, string> = {
   unidad: "unidad",
 };
 
+const NOMBRE_TIPO: Record<TipoInsumo, string> = {
+  ingrediente: "ingredientes",
+  packaging: "packaging",
+};
+
 /**
  * Tabla de una pestaña (ingredientes o packaging). Server component: las
  * consultas de "quién usa este insumo" (para la advertencia de borrado) se
  * resuelven acá mismo, no hace falta pasarlas desde page.tsx.
+ *
+ * Siempre renderiza la tabla (aun con 0 insumos): la fila de alta
+ * (NuevoInsumoRow) vive adentro, no tiene sentido esconder la tabla entera
+ * cuando todavía no hay nada cargado.
  */
-export async function InsumosTable({ insumos }: { insumos: Insumo[] }) {
-  if (insumos.length === 0) {
-    return <p className="text-sm text-muted-foreground">Todavía no hay insumos cargados.</p>;
-  }
-
+export async function InsumosTable({ insumos, tipo }: { insumos: Insumo[]; tipo: TipoInsumo }) {
   // Una consulta por insumo, todas en paralelo. No se puede resolver inline
   // en el JSX porque estos helpers son async (ver src/db/insumos.ts).
   const cascadePorInsumoId = new Map(
@@ -60,6 +71,14 @@ export async function InsumosTable({ insumos }: { insumos: Insumo[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
+          <NuevoInsumoRow tipo={tipo} />
+          {insumos.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-muted-foreground">
+                Todavía no hay {NOMBRE_TIPO[tipo]} cargados.
+              </TableCell>
+            </TableRow>
+          ) : null}
           {insumos.map((insumo) => (
             <TableRow key={insumo.id}>
               <TableCell className="font-medium">{insumo.nombre}</TableCell>
