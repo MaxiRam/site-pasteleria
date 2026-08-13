@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ActualizarPreciosButton } from "./actualizar-precios-button";
 import { PrecioRow } from "./precio-row";
 
 // Lista debe reflejar altas/bajas/ediciones inmediatamente: no cachear la
@@ -32,7 +33,10 @@ export default async function PreciosPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Precios</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Precios</h1>
+        <ActualizarPreciosButton />
+      </div>
 
       <p className="text-sm text-muted-foreground">
         Los precios se generan automáticamente (los 5 diámetros) al crear un producto en{" "}

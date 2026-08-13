@@ -2,12 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { actualizarPrecio, eliminarPrecio, getPrecioById } from "@/db/precios";
+import {
+  actualizarPrecio,
+  eliminarPrecio,
+  getPrecioById,
+  recalcularTodosLosPrecios,
+} from "@/db/precios";
 import { setPackagingDeProducto } from "@/db/producto-insumos";
 
 export type PrecioFormState = { error: string } | undefined;
 export type EliminarPrecioState = { error: string } | undefined;
 export type PackagingFormState = { error: string } | undefined;
+export type RecalcularPreciosState = { error: string } | { ok: true; cantidad: number } | undefined;
 
 /**
  * Traduce errores de negocio esperables de crearPrecio/actualizarPrecio
@@ -188,6 +194,29 @@ export async function actualizarPackagingAction(
   revalidatePath(`/admin/precios/${precioId}/packaging`);
   revalidatePath("/admin");
   redirect("/admin/precios");
+}
+
+/**
+ * Botón "Actualizar precios" arriba de la tabla (ver
+ * actualizar-precios-button.tsx) — recalcula costo/precio sugerido de TODOS
+ * los precios de una sola vez, sin navegar a cada fila. No hace falta
+ * confirm(): igual que actualizarPackagingAction, no toca margen/precioVenta
+ * /confirmado de ninguna fila, solo el costo calculado.
+ */
+export async function recalcularTodosLosPreciosAction(
+  _prevState: RecalcularPreciosState,
+  _formData: FormData,
+): Promise<RecalcularPreciosState> {
+  try {
+    const actualizados = await recalcularTodosLosPrecios();
+    revalidatePath("/admin/precios");
+    revalidatePath("/admin");
+    return { ok: true, cantidad: actualizados.length };
+  } catch (e) {
+    return {
+      error: traducirError(e, "No se pudieron actualizar los precios."),
+    };
+  }
 }
 
 /**
