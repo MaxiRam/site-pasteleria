@@ -5,6 +5,10 @@
  *
  * Uso:
  *   ADMIN_EMAIL=admin@ejemplo.com ADMIN_PASSWORD=algo-seguro npm run db:seed
+ *
+ * Corre también en el build de Vercel (ver buildCommand en vercel.json), así
+ * que sin ADMIN_EMAIL/ADMIN_PASSWORD sale con código 0 en vez de romper: que
+ * falte el seed del admin no tiene por qué tumbar un deploy.
  */
 import { eq } from "drizzle-orm";
 import { db } from "../src/db";
@@ -16,10 +20,11 @@ async function main() {
   const password = process.env.ADMIN_PASSWORD;
 
   if (!email || !password) {
-    console.error(
-      "Faltan ADMIN_EMAIL y/o ADMIN_PASSWORD en el entorno. Ver .env.example.",
+    console.warn(
+      "Sin ADMIN_EMAIL y/o ADMIN_PASSWORD en el entorno: no se seedea ningún admin. " +
+        "Ver .env.example.",
     );
-    process.exit(1);
+    return;
   }
 
   const [existing] = await db.select().from(admins).where(eq(admins.email, email));

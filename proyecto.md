@@ -130,6 +130,42 @@ Admin
 - **Moneda**: ARS (peso argentino).
 - **Imágenes de productos**: upload propio. Hasta implementar el upload, usar placeholder.
 
+## Deploy (Vercel + Turso)
+
+El `buildCommand` de `vercel.json` corre, en orden:
+
+```
+npm run db:migrate && npm run db:seed && npm run build
+```
+
+- **Migraciones automáticas en cada deploy.** Son idempotentes (drizzle lleva
+  registro en `__drizzle_migrations`), así que redeployar no reaplica nada. Si una
+  migración falla, el `&&` corta y el deploy se cae **antes** del build: nunca queda
+  código nuevo corriendo contra un schema viejo.
+- **Seed del admin**, también idempotente (no pisa un admin existente). Si faltan
+  `ADMIN_EMAIL`/`ADMIN_PASSWORD` avisa y sigue, sin romper el deploy.
+
+Env vars necesarias en Vercel:
+
+- `DATABASE_URL` + `DATABASE_AUTH_TOKEN`, o las que inyecta la integración de Turso
+  (`<proyecto>_TURSO_DATABASE_URL` / `<proyecto>_TURSO_AUTH_TOKEN`; se buscan por
+  sufijo, ver `src/db/path.ts`). **`DATABASE_URL` tiene precedencia**: si quedó una
+  vieja apuntando a un archivo local, le gana a la de Turso y la app falla con un
+  error explícito (ver `getDb()` en `src/db/index.ts`).
+- `SESSION_SECRET`.
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` solo si se quiere que el deploy seedee el admin.
+
+**Ojo con la integración Turso de Vercel y las DBs por branch/preview**: la
+integración puede aprovisionar una base de Turso **distinta por branch/preview**
+(en vez de que todos los entornos compartan una sola). Si en algún momento se carga
+data real de negocio entrando por una URL de preview (de una feature branch, no la
+de producción), esa data queda en la DB de esa branch — no en la de producción — y
+un deploy a producción muestra todo vacío aunque el schema esté bien migrado (ya
+pasó una vez: ver commit de este mismo archivo). Antes de cargar datos reales,
+confirmar que se está entrando por la URL de producción, y chequear en el
+dashboard de Turso (`turso db list`) cuántas bases existen y cuál usa cada
+environment de Vercel.
+
 ## Pendientes conocidos (no bloqueantes)
 
 - Interfaz pública (catálogo sin login) — no arrancada.
