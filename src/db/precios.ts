@@ -29,6 +29,15 @@ export interface PrecioConProducto extends Precio {
   producto: ProductoConReceta;
 }
 
+/** Precio de la lista (getPrecios), con si tiene o no packaging cargado para
+ * ESE producto+diámetro puntual — para el ícono de la fila (ver
+ * precio-row.tsx). No se agrega a PrecioConProducto en general porque
+ * crearPrecio/actualizarPrecio/getPrecioById no lo necesitan (evita una
+ * consulta extra de packaging en esos paths). */
+export interface PrecioConPackaging extends PrecioConProducto {
+  tienePackaging: boolean;
+}
+
 export interface PrecioInput {
   productoId: number;
   diametro: Diametro;
@@ -275,7 +284,7 @@ export async function getPrecioById(id: number): Promise<PrecioConProducto | und
  * admin" que getInsumos()/getRecetas()/getProductos(). El volumen de datos
  * de este proyecto es chico, así que resolver el producto de cada precio
  * con una consulta por fila (en vez de un join) no es un problema. */
-export async function getPrecios(): Promise<PrecioConProducto[]> {
+export async function getPrecios(): Promise<PrecioConPackaging[]> {
   const filas = await db.select().from(precios);
 
   const conProducto = await Promise.all(
@@ -286,7 +295,8 @@ export async function getPrecios(): Promise<PrecioConProducto[]> {
           `El precio ${precio.id} referencia un producto inexistente (id ${precio.productoId}).`,
         );
       }
-      return { ...precio, producto };
+      const packaging = await getPackagingDeProducto(precio.productoId, precio.diametro);
+      return { ...precio, producto, tienePackaging: packaging.length > 0 };
     }),
   );
 
