@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronUp, Package, Pencil, Save } from "lucide-react";
 import { calcularMargenReal } from "@/lib/calc";
 import { formatARS } from "@/lib/format";
-import type { PrecioConProducto } from "@/db/precios";
+import type { PrecioConPackaging } from "@/db/precios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -27,7 +27,7 @@ const MARGEN_MIN = 0;
  * campos de las otras celdas se asocian a él vía el atributo HTML `form`
  * (soportado nativamente, no hace falta JS extra para juntarlos).
  */
-export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
+export function PrecioRow({ precio }: { precio: PrecioConPackaging }) {
   const formId = useId();
   const action = actualizarPrecioAction.bind(null, precio.id);
   const [state, formAction, pending] = useActionState<PrecioFormState, FormData>(
@@ -148,9 +148,13 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
             render={<Link href={`/admin/precios/${precio.id}/packaging`} />}
             nativeButton={false}
             aria-label={`Packaging para ${precio.diametro}cm`}
-            title={`Packaging para ${precio.diametro}cm`}
+            title={
+              precio.tienePackaging
+                ? `Packaging para ${precio.diametro}cm (cargado)`
+                : `Packaging para ${precio.diametro}cm (sin cargar)`
+            }
           >
-            <Package />
+            <Package className={precio.tienePackaging ? "text-primary" : "text-muted-foreground"} />
           </Button>
           <DeletePrecioButton
             id={precio.id}
