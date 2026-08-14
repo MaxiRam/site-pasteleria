@@ -45,11 +45,9 @@ export default async function RecetaDetallePage({
   // porque EscaladoTabs es un client component y un Map no es serializable
   // como prop de server a client.
   const porDiametro: EscaladoPorDiametro[] = DIAMETROS.map((diametroDestino) => {
-    const escaladas = calcularCantidadesEscaladas(
-      insumosBase,
-      receta.diametroBase,
-      diametroDestino,
-    );
+    const escaladas = calcularCantidadesEscaladas(insumosBase, receta.diametroBase, diametroDestino, {
+      menosCapaEn12: receta.menosCapaEn12,
+    });
     const costo = calcularCostoReceta(
       escaladas.map((e) => ({
         cantidad: e.cantidad,
@@ -57,9 +55,18 @@ export default async function RecetaDetallePage({
       })),
     );
 
+    // Nota visible solo cuando la reducción de 12cm efectivamente se aplicó
+    // (mismo guard que calcularCantidadesEscaladas): evita que el costo/
+    // cantidades de esa tarjeta parezcan un error sin explicación.
+    const nota =
+      diametroDestino === 12 && receta.menosCapaEn12 && receta.diametroBase !== 12
+        ? "Con una capa menos (2/3 de lo que daría el escalado normal)."
+        : undefined;
+
     return {
       diametro: diametroDestino,
       costo,
+      nota,
       items: escaladas.map((e) => {
         const insumo = insumoPorId.get(e.id)!;
         return {

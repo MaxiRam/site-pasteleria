@@ -1,0 +1,1 @@
+ALTER TABLE `recetas` ADD `menos_capa_en_12` integer DEFAULT false NOT NULL;

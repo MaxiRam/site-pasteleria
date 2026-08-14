@@ -26,6 +26,9 @@ export interface RecetaConInsumos extends Receta {
 export interface RecetaInput {
   nombre: string;
   diametroBase: Diametro;
+  // Ver src/lib/calc/escalado.ts > calcularCantidadesEscaladas: opt-in por
+  // receta, aplica un factor 2/3 extra al escalar a 12cm (una capa menos).
+  menosCapaEn12: boolean;
   insumos: { insumoId: number; cantidad: number; esHuevo: boolean }[];
 }
 
@@ -90,6 +93,7 @@ export async function crearReceta(input: RecetaInput): Promise<RecetaConInsumos>
       .values({
         nombre: normalizarNombre(input.nombre),
         diametroBase: input.diametroBase,
+        menosCapaEn12: input.menosCapaEn12,
       })
       .returning();
 
@@ -136,6 +140,7 @@ export async function actualizarReceta(id: number, input: RecetaInput): Promise<
       .set({
         nombre: normalizarNombre(input.nombre),
         diametroBase: input.diametroBase,
+        menosCapaEn12: input.menosCapaEn12,
       })
       .where(eq(recetas.id, id));
 

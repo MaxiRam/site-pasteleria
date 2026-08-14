@@ -76,6 +76,10 @@ export const recetas = sqliteTable(
     nombre: text("nombre").notNull(),
     // Diámetro (cm) para el que están cargadas las cantidades de receta_insumos.
     diametroBase: integer("diametro_base").notNull().$type<Diametro>(),
+    // Algunas recetas, en 12cm, llevan una capa menos (para no quedar muy
+    // alta) — el 12cm real usa 2/3 de lo que da el escalado geométrico puro.
+    // Ver src/lib/calc/escalado.ts > calcularCantidadesEscaladas.
+    menosCapaEn12: integer("menos_capa_en_12", { mode: "boolean" }).notNull().default(false),
   },
   (t) => [
     check("recetas_diametro_base_check", sql`${t.diametroBase} in (12,18,20,22,25)`),

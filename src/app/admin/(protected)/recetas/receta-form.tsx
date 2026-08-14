@@ -24,6 +24,7 @@ type RecetaFormAction = (
 export interface RecetaFormValues {
   nombre: string;
   diametroBase: Diametro;
+  menosCapaEn12: boolean;
   insumos: { insumoId: number; cantidad: number; esHuevo: boolean }[];
 }
 
@@ -151,6 +152,22 @@ export function RecetaForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Switch
+            name="menosCapaEn12"
+            defaultChecked={initialValues?.menosCapaEn12 ?? false}
+            disabled={diametroBase === 12}
+          />
+          El 12cm se hace con una capa menos (usa 2/3 de los insumos calculados)
+        </Label>
+        {diametroBase === 12 ? (
+          <p className="text-xs text-muted-foreground">
+            No aplica: esta receta ya está cargada a 12cm como base.
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-3">
