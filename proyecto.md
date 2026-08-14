@@ -70,9 +70,11 @@ Cada receta define:
 - A lo sumo un insumo marcado como huevo (`esHuevo`), con índice único parcial a nivel DB además del guard de aplicación
 
 **Escalado por tamaño**: a partir de la receta cargada para un diámetro, el sistema calcula automáticamente las cantidades equivalentes para los demás diámetros. Fórmula (en `src/lib/calc/escalado.ts`): sea `D` el diámetro cargado, `R = D/2`; `D_t` el diámetro destino, `R_t = D_t/2`.
-- Con huevos (cantidad `H` en la receta base): `factor_escalado = round(H * (R_t^2 / R^2)) / H`
+- Con huevos (cantidad `H` en la receta base): `factor_escalado = round(H * (R_t^2 / R^2)) / H` — **excepto** si el diámetro destino es 25cm, donde se usa `ceil` en vez de `round` (para no quedarse corto de huevos en la torta más grande).
 - Sin huevos: `factor_escalado = R_t^2 / R^2`
 - Cantidad escalada de cada insumo = `cantidad_base * factor_escalado`
+
+**Una capa menos en 12cm (opcional por receta)**: algunas recetas, al hornearse en 12cm, llevan una capa menos que en los demás tamaños (para que no quede desproporcionadamente alta) — la torta real de 12cm usa 2/3 de lo que da el escalado geométrico puro. Se activa por receta con el flag `menosCapaEn12` (columna en `recetas`, switch en el form) y solo tiene efecto al escalar HACIA 12cm desde otro diámetro base — si la receta ya está cargada con base 12cm, verla en su propio diámetro base siempre reproduce exactamente lo cargado, sin aplicar la reducción encima.
 
 Costo de la receta a un diámetro = suma de (cantidad escalada × precio unitario base del insumo).
 

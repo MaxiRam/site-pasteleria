@@ -92,7 +92,9 @@ export async function calcularCostoProductoEnDiametro(
   }));
   const insumoPorId = new Map(receta.insumos.map((ri) => [ri.insumoId, ri.insumo]));
 
-  const escaladas = calcularCantidadesEscaladas(insumosBase, receta.diametroBase, diametro);
+  const escaladas = calcularCantidadesEscaladas(insumosBase, receta.diametroBase, diametro, {
+    menosCapaEn12: receta.menosCapaEn12,
+  });
 
   const costoIngredientesEscalados = calcularCostoReceta(
     escaladas.map((e) => ({

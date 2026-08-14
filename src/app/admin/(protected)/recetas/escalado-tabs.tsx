@@ -15,6 +15,9 @@ export interface EscaladoItem {
 export interface EscaladoPorDiametro {
   diametro: number;
   costo: number;
+  /** Nota de negocio para este diámetro (ej. la reducción de 2/3 en 12cm) —
+   * la decide el server (page.tsx), este componente solo la muestra. */
+  nota?: string;
   items: EscaladoItem[];
 }
 
@@ -59,7 +62,8 @@ export function EscaladoTabs({
               </CardTitle>
               <CardAction className="text-sm font-medium">{formatARS(p.costo)}</CardAction>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-3">
+              {p.nota ? <p className="text-xs text-muted-foreground">{p.nota}</p> : null}
               {p.items.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Esta receta todavía no tiene ingredientes.

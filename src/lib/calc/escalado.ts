@@ -57,6 +57,12 @@ export interface InsumoCantidadEscalada<TId = number> {
  * - `cantidadHuevosBase` = H (cantidad de huevos en la receta base) →
  *   `factor = round(H * R_t^2 / R^2) / H`, de forma que `H * factor` sea
  *   siempre un entero (no hay fracciones de huevo).
+ *   Excepción: si `diametroDestino` es 25cm, se usa `ceil` en lugar de
+ *   `round` (`factor = ceil(H * R_t^2 / R^2) / H`). A 25cm conviene
+ *   redondear siempre para arriba en vez de al más cercano, para no
+ *   quedarse corto de huevos en la torta más grande. Esto es un cambio
+ *   fijo de la fórmula, no un flag: aplica siempre que se escale huevos
+ *   a destino=25, sin importar el diámetro base.
  */
 export function calcularFactorEscalado(
   diametroBase: Diametro,
@@ -77,7 +83,12 @@ export function calcularFactorEscalado(
     );
   }
 
-  return Math.round(cantidadHuevosBase * factorGeometrico) / cantidadHuevosBase;
+  const huevosEscalados =
+    diametroDestino === 25
+      ? Math.ceil(cantidadHuevosBase * factorGeometrico)
+      : Math.round(cantidadHuevosBase * factorGeometrico);
+
+  return huevosEscalados / cantidadHuevosBase;
 }
 
 /**
@@ -85,11 +96,29 @@ export function calcularFactorEscalado(
  * diametroDestino. Si algún ítem tiene `esHuevo: true`, su cantidad se usa
  * como H para el redondeo de huevos y el mismo factor resultante se aplica
  * a todos los insumos (incluido el propio huevo).
+ *
+ * `opciones.menosCapaEn12` (opt-in por receta, NO es un comportamiento
+ * global): algunas recetas, al hornearse en 12cm, usan una capa menos que
+ * en el resto de los tamaños (para que la torta no quede desproporcionada
+ * de alta). En esos casos la torta real de 12cm usa solo 2/3 de lo que el
+ * escalado geométrico puro calcularía, así que se aplica un factor
+ * adicional de 2/3 por encima del factor ya calculado (geométrico o
+ * ajustado por huevos, sin cambios).
+ *
+ * La corrección solo aplica cuando `diametroDestino === 12 &&
+ * diametroBase !== 12`. La guarda `diametroBase !== 12` es clave: si la
+ * receta está cargada justamente con base 12cm, lo que se ingresó ahí ya
+ * refleja la cantidad real de capas que esa receta usa a 12cm. Ver/costear
+ * la receta en su propio diámetro base siempre debe reproducir exactamente
+ * lo que se cargó, sin volver a aplicarle la reducción encima. La
+ * corrección solo tiene sentido cuando de verdad se está escalando DESDE
+ * otro diámetro HACIA 12cm.
  */
 export function calcularCantidadesEscaladas<TId>(
   insumos: InsumoCantidadBase<TId>[],
   diametroBase: Diametro,
   diametroDestino: Diametro,
+  opciones?: { menosCapaEn12?: boolean },
 ): InsumoCantidadEscalada<TId>[] {
   const huevos = insumos.filter((i) => i.esHuevo);
 
@@ -102,5 +131,9 @@ export function calcularCantidadesEscaladas<TId>(
   const huevo = huevos[0];
   const factor = calcularFactorEscalado(diametroBase, diametroDestino, huevo?.cantidad);
 
-  return insumos.map((i) => ({ id: i.id, cantidad: i.cantidad * factor }));
+  const factorCapaMenos =
+    diametroDestino === 12 && diametroBase !== 12 && opciones?.menosCapaEn12 ? 2 / 3 : 1;
+  const factorFinal = factor * factorCapaMenos;
+
+  return insumos.map((i) => ({ id: i.id, cantidad: i.cantidad * factorFinal }));
 }

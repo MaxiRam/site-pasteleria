@@ -27,6 +27,7 @@ interface InsumoRecetaCrudo {
 function parseRecetaInput(formData: FormData): RecetaInput | { error: string } {
   const nombre = formData.get("nombre");
   const diametroBaseRaw = formData.get("diametroBase");
+  const menosCapaEn12 = formData.get("menosCapaEn12");
   const insumosJson = formData.get("insumosJson");
 
   if (typeof nombre !== "string" || !nombre.trim()) {
@@ -90,6 +91,9 @@ function parseRecetaInput(formData: FormData): RecetaInput | { error: string } {
   return {
     nombre,
     diametroBase: diametroBaseNum as Diametro,
+    // Checkbox/Switch: solo viaja en el FormData cuando está marcado (mismo
+    // criterio que confirmado/publicado en precios/productos).
+    menosCapaEn12: menosCapaEn12 === "on",
     insumos: items,
   };
 }

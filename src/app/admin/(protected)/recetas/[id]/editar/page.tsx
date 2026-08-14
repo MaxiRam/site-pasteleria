@@ -36,6 +36,7 @@ export default async function EditarRecetaPage({
         initialValues={{
           nombre: receta.nombre,
           diametroBase: receta.diametroBase,
+          menosCapaEn12: receta.menosCapaEn12,
           insumos: receta.insumos.map((i) => ({
             insumoId: i.insumoId,
             cantidad: i.cantidad,
