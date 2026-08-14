@@ -2,6 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { formatARS } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { PrecioFormState } from "./actions";
 
 type EditarPrecioFormAction = (
@@ -58,31 +62,28 @@ export function EditarPrecioForm({
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-zinc-700">Producto</span>
-        <p className="text-sm text-zinc-900">{nombreProducto}</p>
+        <span className="text-sm font-medium">Producto</span>
+        <p className="text-sm">{nombreProducto}</p>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-zinc-700">Diámetro</span>
-        <p className="text-sm text-zinc-900">{diametro}cm</p>
+        <span className="text-sm font-medium">Diámetro</span>
+        <p className="text-sm">{diametro}cm</p>
       </div>
 
-      <div className="flex flex-col gap-1 rounded border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700">
+      <div className="flex flex-col gap-1 rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
         <p>
-          Costo calculado actual:{" "}
-          <span className="font-medium text-zinc-900">{formatARS(costoActual)}</span>
+          Costo calculado actual: <span className="font-medium text-foreground">{formatARS(costoActual)}</span>
         </p>
         <p>
           Precio sugerido actual (con el margen guardado):{" "}
-          <span className="font-medium text-zinc-900">{formatARS(precioSugeridoActual)}</span>
+          <span className="font-medium text-foreground">{formatARS(precioSugeridoActual)}</span>
         </p>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="margenPct" className="text-sm font-medium text-zinc-700">
-          Margen (%)
-        </label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="margenPct">Margen (%)</Label>
+        <Input
           id="margenPct"
           name="margenPct"
           type="number"
@@ -91,16 +92,13 @@ export function EditarPrecioForm({
           max="99.99"
           required
           defaultValue={margenPctInicial * 100}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="precioVenta" className="text-sm font-medium text-zinc-700">
-          Precio de venta
-        </label>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="precioVenta">Precio de venta</Label>
         <div className="flex items-center gap-2">
-          <input
+          <Input
             id="precioVenta"
             name="precioVenta"
             type="number"
@@ -108,37 +106,28 @@ export function EditarPrecioForm({
             min="0"
             value={precioVenta}
             onChange={(e) => setPrecioVenta(e.target.value)}
-            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
           />
-          <button
-            type="button"
-            onClick={copiarSugerido}
-            className="whitespace-nowrap rounded border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={copiarSugerido} className="whitespace-nowrap">
             Copiar sugerido
-          </button>
+          </Button>
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-700">
-        <input type="checkbox" name="confirmado" defaultChecked={confirmadoInicial} />
+      <Label className="flex items-center gap-2 text-sm">
+        <Switch name="confirmado" defaultChecked={confirmadoInicial} />
         Confirmado
-      </label>
+      </Label>
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-muted-foreground">
         Un producto+diámetro solo es visible en el catálogo público si el producto está
         publicado y este precio está confirmado.
       </p>
 
-      {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending}>
         {pending ? "Guardando..." : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -3,6 +3,17 @@
 import { useActionState, useRef, useState } from "react";
 import type { Insumo } from "@/db/insumos";
 import { DIAMETROS, type Diametro } from "@/db/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { RecetaFormState } from "./actions";
 
 type RecetaFormAction = (
@@ -19,7 +30,7 @@ export interface RecetaFormValues {
 /**
  * Fila del form, con id estable propio (no el índice del array: al
  * agregar/quitar filas el índice cambia y rompería el `key` de React y la
- * identidad de cada radio "es huevo"). `cantidad` se guarda como string
+ * identidad de cada switch "es huevo"). `cantidad` se guarda como string
  * mientras se edita (input controlado) y se parsea a número recién al
  * armar el JSON que se manda al server.
  */
@@ -69,6 +80,10 @@ export function RecetaForm({
     return [];
   });
 
+  const [diametroBase, setDiametroBase] = useState<Diametro>(
+    initialValues?.diametroBase ?? DIAMETROS[0],
+  );
+
   function agregarFila() {
     if (insumosDisponibles.length === 0) return;
     setFilas((prev) => [
@@ -90,12 +105,10 @@ export function RecetaForm({
     setFilas((prev) => prev.map((fila) => (fila.id === id ? { ...fila, ...patch } : fila)));
   }
 
-  function marcarHuevo(id: number) {
-    setFilas((prev) => prev.map((fila) => ({ ...fila, esHuevo: fila.id === id })));
-  }
-
-  function quitarMarcaHuevo() {
-    setFilas((prev) => prev.map((fila) => ({ ...fila, esHuevo: false })));
+  function marcarHuevo(id: number, esHuevo: boolean) {
+    setFilas((prev) =>
+      prev.map((fila) => ({ ...fila, esHuevo: esHuevo && fila.id === id })),
+    );
   }
 
   // Serializado que consume parseRecetaInput en actions.ts. cantidad viaja
@@ -111,131 +124,109 @@ export function RecetaForm({
     })),
   );
 
-  const hayHuevoMarcado = filas.some((fila) => fila.esHuevo);
-
   return (
     <form action={formAction} className="flex w-full max-w-2xl flex-col gap-6">
       <input type="hidden" name="insumosJson" value={insumosJson} />
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="nombre" className="text-sm font-medium text-zinc-700">
-          Nombre
-        </label>
-        <input
-          id="nombre"
-          name="nombre"
-          type="text"
-          required
-          defaultValue={initialValues?.nombre}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-        />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="nombre">Nombre</Label>
+        <Input id="nombre" name="nombre" type="text" required defaultValue={initialValues?.nombre} />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="diametroBase" className="text-sm font-medium text-zinc-700">
-          Diámetro base
-        </label>
-        <select
-          id="diametroBase"
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="diametroBase">Diámetro base</Label>
+        <Select
           name="diametroBase"
-          required
-          defaultValue={initialValues?.diametroBase ?? DIAMETROS[0]}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+          value={String(diametroBase)}
+          onValueChange={(v) => setDiametroBase(Number(v) as Diametro)}
         >
-          {DIAMETROS.map((diametro) => (
-            <option key={diametro} value={diametro}>
-              {diametro}cm
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="diametroBase" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DIAMETROS.map((diametro) => (
+              <SelectItem key={diametro} value={String(diametro)}>
+                {diametro}cm
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-zinc-700">Insumos de la receta</span>
-          <button
+          <span className="text-sm font-medium">Insumos de la receta</span>
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={agregarFila}
             disabled={insumosDisponibles.length === 0}
-            className="rounded border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
           >
             Agregar insumo
-          </button>
+          </Button>
         </div>
 
         {insumosDisponibles.length === 0 ? (
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-muted-foreground">
             No hay insumos cargados todavía. Creá insumos antes de armar una receta.
           </p>
         ) : null}
 
         {filas.map((fila) => (
-          <div
-            key={fila.id}
-            className="flex flex-wrap items-center gap-3 rounded border border-zinc-200 p-3"
-          >
-            <select
-              value={fila.insumoId}
-              onChange={(e) => actualizarFila(fila.id, { insumoId: Number(e.target.value) })}
-              className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+          <div key={fila.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3">
+            <Select
+              value={String(fila.insumoId)}
+              onValueChange={(v) => actualizarFila(fila.id, { insumoId: Number(v) })}
             >
-              {insumosDisponibles.map((insumo) => (
-                <option key={insumo.id} value={insumo.id}>
-                  {insumo.nombre}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {insumosDisponibles.map((insumo) => (
+                  <SelectItem key={insumo.id} value={String(insumo.id)}>
+                    {insumo.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <input
+            <Input
               type="number"
               step="any"
               min="0"
               placeholder="Cantidad"
               value={fila.cantidad}
               onChange={(e) => actualizarFila(fila.id, { cantidad: e.target.value })}
-              className="w-28 rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+              className="w-28"
             />
 
-            <label className="flex items-center gap-1 text-sm text-zinc-600">
-              <input
-                type="radio"
-                name="esHuevo"
+            <Label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Switch
                 checked={fila.esHuevo}
-                onChange={() => marcarHuevo(fila.id)}
+                onCheckedChange={(checked) => marcarHuevo(fila.id, checked)}
               />
               Es huevo
-            </label>
+            </Label>
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => quitarFila(fila.id)}
-              className="ml-auto text-sm text-red-600 hover:underline"
+              className="ml-auto text-destructive hover:text-destructive"
             >
               Quitar
-            </button>
+            </Button>
           </div>
         ))}
-
-        {hayHuevoMarcado ? (
-          <button
-            type="button"
-            onClick={quitarMarcaHuevo}
-            className="self-start text-xs text-zinc-500 hover:underline"
-          >
-            Ningún insumo es huevo
-          </button>
-        ) : null}
       </div>
 
-      {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending || filas.length === 0}
-        className="self-start rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending || filas.length === 0} className="self-start">
         {pending ? "Guardando..." : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -29,6 +29,15 @@ export interface PrecioConProducto extends Precio {
   producto: ProductoConReceta;
 }
 
+/** Precio de la lista (getPrecios), con si tiene o no packaging cargado para
+ * ESE producto+diámetro puntual — para el ícono de la fila (ver
+ * precio-row.tsx). No se agrega a PrecioConProducto en general porque
+ * crearPrecio/actualizarPrecio/getPrecioById no lo necesitan (evita una
+ * consulta extra de packaging en esos paths). */
+export interface PrecioConPackaging extends PrecioConProducto {
+  tienePackaging: boolean;
+}
+
 export interface PrecioInput {
   productoId: number;
   diametro: Diametro;
@@ -229,6 +238,38 @@ export async function actualizarPrecio(
   return actualizado;
 }
 
+/**
+ * Recalcula `costoCalculado`/`precioSugerido` de TODOS los precios
+ * existentes, manteniendo el margen/precioVenta/confirmado de cada uno tal
+ * cual — mismo criterio que `actualizarPackagingAction` (precios/actions.ts):
+ * reusa `actualizarPrecio` entero en vez de duplicar el cálculo de costo.
+ *
+ * Sirve para cuando cambió el precio de compra de uno o más insumos: el
+ * costo de cada precio recién se refleja al guardar esa fila individualmente
+ * (ver comentario en `actualizarPrecio`), así que sin esto un cambio de
+ * precio de insumo puede dejar decenas de filas con un costo desactualizado
+ * hasta que el admin las guarde una por una.
+ *
+ * Secuencial (no `Promise.all`) a propósito: mismo criterio que
+ * `generarPreciosParaProducto`, evita escrituras concurrentes contra la
+ * misma tabla.
+ */
+export async function recalcularTodosLosPrecios(): Promise<PrecioConProducto[]> {
+  const filas = await db.select().from(precios);
+
+  const actualizados: PrecioConProducto[] = [];
+  for (const precio of filas) {
+    actualizados.push(
+      await actualizarPrecio(precio.id, {
+        margenPct: precio.margenPct,
+        precioVenta: precio.precioVenta,
+        confirmado: precio.confirmado,
+      }),
+    );
+  }
+  return actualizados;
+}
+
 /** Sin cascada hacia nada: `precios` es la hoja del árbol. */
 export async function eliminarPrecio(id: number): Promise<void> {
   await db.delete(precios).where(eq(precios.id, id));
@@ -243,7 +284,7 @@ export async function getPrecioById(id: number): Promise<PrecioConProducto | und
  * admin" que getInsumos()/getRecetas()/getProductos(). El volumen de datos
  * de este proyecto es chico, así que resolver el producto de cada precio
  * con una consulta por fila (en vez de un join) no es un problema. */
-export async function getPrecios(): Promise<PrecioConProducto[]> {
+export async function getPrecios(): Promise<PrecioConPackaging[]> {
   const filas = await db.select().from(precios);
 
   const conProducto = await Promise.all(
@@ -254,7 +295,8 @@ export async function getPrecios(): Promise<PrecioConProducto[]> {
           `El precio ${precio.id} referencia un producto inexistente (id ${precio.productoId}).`,
         );
       }
-      return { ...precio, producto };
+      const packaging = await getPackagingDeProducto(precio.productoId, precio.diametro);
+      return { ...precio, producto, tienePackaging: packaging.length > 0 };
     }),
   );
 

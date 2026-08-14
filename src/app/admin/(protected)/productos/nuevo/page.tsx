@@ -9,7 +9,7 @@ export default async function NuevoProductoPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">Nuevo producto</h1>
+      <h1 className="text-2xl font-semibold">Nuevo producto</h1>
       <ProductoForm
         action={crearProductoAction}
         recetasDisponibles={recetasDisponibles}

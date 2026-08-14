@@ -2,10 +2,14 @@
 
 import { useActionState, useId, useState } from "react";
 import Link from "next/link";
+import { ChevronDown, ChevronUp, Package, Pencil, Save } from "lucide-react";
 import { calcularMargenReal } from "@/lib/calc";
 import { formatARS } from "@/lib/format";
-import type { PrecioConProducto } from "@/db/precios";
-import { ChevronDownIcon, ChevronUpIcon, PackageIcon, PencilIcon, SaveIcon } from "@/components/icons";
+import type { PrecioConPackaging } from "@/db/precios";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { actualizarPrecioAction, type PrecioFormState } from "./actions";
 import { DeletePrecioButton } from "./delete-precio-button";
 
@@ -17,13 +21,13 @@ const MARGEN_MIN = 0;
  * Fila editable de la lista de precios: margen (con stepper ±1%), precio de
  * venta y confirmado, todo en un solo submit — sin ir a "Editar margen".
  *
- * Los inputs quedan en sus <td> normales (no hay un <form> envolviendo la
- * fila: <form> como ancestro de <tr> rompe la semántica de tabla). En vez
+ * Los inputs quedan en sus <TableCell> normales (no hay un <form> envolviendo
+ * la fila: <form> como ancestro de <tr> rompe la semántica de tabla). En vez
  * de eso, un único <form> "headless" vive en la última celda y los
  * campos de las otras celdas se asocian a él vía el atributo HTML `form`
  * (soportado nativamente, no hace falta JS extra para juntarlos).
  */
-export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
+export function PrecioRow({ precio }: { precio: PrecioConPackaging }) {
   const formId = useId();
   const action = actualizarPrecioAction.bind(null, precio.id);
   const [state, formAction, pending] = useActionState<PrecioFormState, FormData>(
@@ -49,31 +53,31 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
       : null;
 
   return (
-    <tr className="border-b border-zinc-100 last:border-0">
-      <td className="px-4 py-2 text-zinc-900">{precio.producto.nombrePublico}</td>
-      <td className="px-4 py-2 text-zinc-700">{precio.diametro}cm</td>
-      <td className="px-4 py-2 text-zinc-700">{formatARS(precio.costoCalculado)}</td>
-      <td className="px-4 py-2">
+    <TableRow>
+      <TableCell className="font-medium">{precio.producto.nombrePublico}</TableCell>
+      <TableCell>{precio.diametro}cm</TableCell>
+      <TableCell>{formatARS(precio.costoCalculado)}</TableCell>
+      <TableCell>
         <div className="flex items-center gap-1">
           <div className="flex flex-col">
             <button
               type="button"
               onClick={() => ajustarMargen(MARGEN_STEP)}
-              className="flex items-center justify-center rounded-t border border-b-0 border-zinc-300 px-0.5 text-zinc-700 hover:bg-zinc-100"
+              className="flex items-center justify-center rounded-t-sm border border-b-0 border-input px-0.5 text-muted-foreground hover:bg-muted"
               aria-label="Aumentar margen 1%"
             >
-              <ChevronUpIcon className="h-3 w-3" />
+              <ChevronUp className="size-3" />
             </button>
             <button
               type="button"
               onClick={() => ajustarMargen(-MARGEN_STEP)}
-              className="flex items-center justify-center rounded-b border border-zinc-300 px-0.5 text-zinc-700 hover:bg-zinc-100"
+              className="flex items-center justify-center rounded-b-sm border border-input px-0.5 text-muted-foreground hover:bg-muted"
               aria-label="Disminuir margen 1%"
             >
-              <ChevronDownIcon className="h-3 w-3" />
+              <ChevronDown className="size-3" />
             </button>
           </div>
-          <input
+          <Input
             form={formId}
             type="number"
             name="margenPct"
@@ -83,15 +87,15 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
             required
             value={margenPct}
             onChange={(e) => setMargenPct(e.target.value)}
-            className="w-16 rounded border border-zinc-300 px-1 py-1 text-center text-sm text-zinc-900"
+            className="w-16 text-center"
           />
-          <span className="text-xs text-zinc-500">%</span>
+          <span className="text-xs text-muted-foreground">%</span>
         </div>
-      </td>
-      <td className="px-4 py-2 text-zinc-700">{formatARS(precio.precioSugerido)}</td>
-      <td className="px-4 py-2 text-zinc-700">
+      </TableCell>
+      <TableCell>{formatARS(precio.precioSugerido)}</TableCell>
+      <TableCell>
         <div className="flex items-center gap-1">
-          <input
+          <Input
             form={formId}
             type="number"
             name="precioVenta"
@@ -99,63 +103,67 @@ export function PrecioRow({ precio }: { precio: PrecioConProducto }) {
             min="0"
             placeholder="—"
             defaultValue={precio.precioVenta ?? ""}
-            className="w-24 rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-900"
+            className="w-24"
           />
           {margenRealPct !== null ? (
-            <span className="text-xs text-zinc-500">({margenRealPct.toFixed(1)}%)</span>
+            <span className="text-xs text-muted-foreground">({margenRealPct.toFixed(1)}%)</span>
           ) : null}
         </div>
-      </td>
-      <td className="px-4 py-2">
-        <label className="relative inline-flex cursor-pointer items-center">
-          <input
-            form={formId}
-            type="checkbox"
-            name="confirmado"
-            defaultChecked={precio.confirmado}
-            className="peer sr-only"
-          />
-          <div className="h-5 w-9 rounded-full bg-zinc-300 transition-colors peer-checked:bg-green-600" />
-          <div className="absolute left-0.5 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-4" />
-        </label>
-      </td>
-      <td className="px-4 py-2">
-        <div className="flex items-center gap-3">
+      </TableCell>
+      <TableCell>
+        <Switch
+          form={formId}
+          name="confirmado"
+          defaultChecked={precio.confirmado}
+          aria-label="Confirmado"
+        />
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
           <form id={formId} action={formAction} />
-          <button
+          <Button
             type="submit"
             form={formId}
+            variant="ghost"
+            size="icon-sm"
             disabled={pending}
             aria-label="Guardar"
             title="Guardar"
-            className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
           >
-            <SaveIcon className="h-4 w-4" />
-          </button>
-          <Link
-            href={`/admin/precios/${precio.id}/editar`}
+            <Save />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            render={<Link href={`/admin/precios/${precio.id}/editar`} />}
+            nativeButton={false}
             aria-label="Editar"
             title="Editar"
-            className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
           >
-            <PencilIcon className="h-4 w-4" />
-          </Link>
-          <Link
-            href={`/admin/precios/${precio.id}/packaging`}
+            <Pencil />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            render={<Link href={`/admin/precios/${precio.id}/packaging`} />}
+            nativeButton={false}
             aria-label={`Packaging para ${precio.diametro}cm`}
-            title={`Packaging para ${precio.diametro}cm`}
-            className="rounded border border-zinc-300 p-1.5 text-zinc-700 hover:bg-zinc-100"
+            title={
+              precio.tienePackaging
+                ? `Packaging para ${precio.diametro}cm (cargado)`
+                : `Packaging para ${precio.diametro}cm (sin cargar)`
+            }
           >
-            <PackageIcon className="h-4 w-4" />
-          </Link>
+            <Package className={precio.tienePackaging ? "text-primary" : "text-muted-foreground"} />
+          </Button>
           <DeletePrecioButton
             id={precio.id}
             nombreProducto={precio.producto.nombrePublico}
             diametro={precio.diametro}
           />
         </div>
-        {state?.error ? <p className="mt-1 text-xs text-red-600">{state.error}</p> : null}
-      </td>
-    </tr>
+        {state?.error ? <p className="mt-1 text-xs text-destructive">{state.error}</p> : null}
+      </TableCell>
+    </TableRow>
   );
 }

@@ -34,7 +34,7 @@ export default async function EditarPrecioPage({
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-zinc-900">
+      <h1 className="text-2xl font-semibold">
         Editar precio: {precio.producto.nombrePublico} — {precio.diametro}cm
       </h1>
       <EditarPrecioForm

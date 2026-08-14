@@ -2,6 +2,15 @@
 
 import { useActionState, useRef, useState } from "react";
 import type { Insumo } from "@/db/insumos";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { PackagingFormState } from "./actions";
 
 type PackagingFormAction = (
@@ -73,70 +82,70 @@ export function PackagingForm({
       <input type="hidden" name="packagingJson" value={packagingJson} />
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-zinc-700">Packaging</span>
-        <button
+        <span className="text-sm font-medium">Packaging</span>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={agregarFila}
           disabled={packagingDisponible.length === 0}
-          className="rounded border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
         >
           Agregar packaging
-        </button>
+        </Button>
       </div>
 
       {packagingDisponible.length === 0 ? (
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-muted-foreground">
           No hay insumos de packaging cargados. Creá uno en la pestaña &quot;Packaging&quot; de
           Insumos.
         </p>
       ) : null}
 
       {filas.map((fila) => (
-        <div
-          key={fila.id}
-          className="flex flex-wrap items-center gap-3 rounded border border-zinc-200 p-3"
-        >
-          <select
-            value={fila.insumoId}
-            onChange={(e) => actualizarFila(fila.id, { insumoId: Number(e.target.value) })}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+        <div key={fila.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3">
+          <Select
+            value={String(fila.insumoId)}
+            onValueChange={(v) => actualizarFila(fila.id, { insumoId: Number(v) })}
           >
-            {packagingDisponible.map((insumo) => (
-              <option key={insumo.id} value={insumo.id}>
-                {insumo.nombre}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {packagingDisponible.map((insumo) => (
+                <SelectItem key={insumo.id} value={String(insumo.id)}>
+                  {insumo.nombre}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <input
+          <Input
             type="number"
             step="any"
             min="0"
             placeholder="Cantidad"
             value={fila.cantidad}
             onChange={(e) => actualizarFila(fila.id, { cantidad: e.target.value })}
-            className="w-28 rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+            className="w-28"
           />
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => quitarFila(fila.id)}
-            className="ml-auto text-sm text-red-600 hover:underline"
+            className="ml-auto text-destructive hover:text-destructive"
           >
             Quitar
-          </button>
+          </Button>
         </div>
       ))}
 
-      {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state?.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
+      <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Guardando..." : "Guardar packaging"}
-      </button>
+      </Button>
     </form>
   );
 }

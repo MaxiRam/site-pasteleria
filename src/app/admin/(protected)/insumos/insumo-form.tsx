@@ -32,18 +32,16 @@ const NOMBRE_TIPO: Record<TipoInsumo, string> = {
   packaging: "Packaging",
 };
 
+// La alta de insumos ahora es una fila inline en la tabla (ver
+// nuevo-insumo-row.tsx), no un form aparte — este componente sobrevive solo
+// para /[id]/editar, así que initialValues siempre está presente.
 export function InsumoForm({
   action,
   initialValues,
-  defaultTipo,
   submitLabel,
 }: {
   action: InsumoFormAction;
-  initialValues?: InsumoFormValues;
-  // Tipo con el que arranca el form en alta (viene del query param ?tipo=
-  // de la pestaña activa en /admin/insumos, ver nuevo/page.tsx). En edición
-  // se ignora: initialValues.tipo manda.
-  defaultTipo?: TipoInsumo;
+  initialValues: InsumoFormValues;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<InsumoFormState, FormData>(
@@ -51,10 +49,8 @@ export function InsumoForm({
     undefined,
   );
 
-  const [tipo, setTipo] = useState<TipoInsumo>(
-    initialValues?.tipo ?? defaultTipo ?? TIPOS_INSUMO[0],
-  );
-  const [unidad, setUnidad] = useState<Unidad>(initialValues?.unidad ?? UNIDADES[0]);
+  const [tipo, setTipo] = useState<TipoInsumo>(initialValues.tipo);
+  const [unidad, setUnidad] = useState<Unidad>(initialValues.unidad);
 
   // Packaging solo se mide en 'unidad' (no tiene sentido "0.5g de caja",
   // ver insumos_packaging_unidad_check en schema.ts) — al elegir packaging,
@@ -72,7 +68,7 @@ export function InsumoForm({
     <form action={formAction} className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="nombre">Nombre</Label>
-        <Input id="nombre" name="nombre" type="text" required defaultValue={initialValues?.nombre} />
+        <Input id="nombre" name="nombre" type="text" required defaultValue={initialValues.nombre} />
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -84,7 +80,7 @@ export function InsumoForm({
           step="any"
           min="0"
           required
-          defaultValue={initialValues?.cantidadComprada}
+          defaultValue={initialValues.cantidadComprada}
         />
       </div>
 
@@ -118,7 +114,7 @@ export function InsumoForm({
           step="any"
           min="0"
           required
-          defaultValue={initialValues?.precioCompra}
+          defaultValue={initialValues.precioCompra}
         />
       </div>
 
